@@ -1,0 +1,16 @@
+name: EnchantHelper
+version: '${version}'
+main: creeperpookie.enchanthelper.ItemHelperPlugin
+api-version: '1.21'
+prefix: EnchantHelper
+load: STARTUP
+authors: [ CreeperPookie ]
+description: A simple mod to help reduce cheating from creative or commands!
+website: https://github.com/CreeperPookie/EnchantHelper
+commands:
+  enchanthelper:
+    aliases: [ "eh", "enchantitem", "enchanthelp" ]
+permissions:
+    enchanthelper.use:
+        description: Allows the player to enchant items and use the plugin
+        default: op
