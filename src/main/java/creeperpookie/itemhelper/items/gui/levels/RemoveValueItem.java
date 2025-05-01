@@ -1,4 +1,4 @@
-package creeperpookie.itemhelper.items.gui.enchantments.levels;
+package creeperpookie.itemhelper.items.gui.levels;
 
 import creeperpookie.itemhelper.items.CustomItem;
 import creeperpookie.itemhelper.items.ItemConstants;

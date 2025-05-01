@@ -5,9 +5,9 @@ import creeperpookie.itemhelper.items.gui.attributes.*;
 import creeperpookie.itemhelper.items.gui.enchantments.*;
 import creeperpookie.itemhelper.items.gui.enchantments.curses.CurseOfBindingItem;
 import creeperpookie.itemhelper.items.gui.enchantments.curses.CurseOfVanishingItem;
-import creeperpookie.itemhelper.items.gui.enchantments.levels.BasicEnchantmentLevelItem;
-import creeperpookie.itemhelper.items.gui.enchantments.levels.CustomEnchantmentLevelItem;
-import creeperpookie.itemhelper.items.gui.enchantments.levels.RemoveValueItem;
+import creeperpookie.itemhelper.items.gui.levels.BasicEnchantmentLevelItem;
+import creeperpookie.itemhelper.items.gui.levels.CustomEnchantmentLevelItem;
+import creeperpookie.itemhelper.items.gui.levels.RemoveValueItem;
 
 public enum ItemType
 {

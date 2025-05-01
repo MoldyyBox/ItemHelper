@@ -56,7 +56,7 @@ public class CurrentItemsItem implements CustomItem
 	public boolean isItem(ItemStack item)
 	{
 		ItemStack currentItem = getItemStack();
-		return item.getType() == currentItem.getType() && item.getItemMeta().hasCustomModelData() && item.getItemMeta().getCustomModelData() == currentItem.getItemMeta().getCustomModelData() && item.getEnchantmentLevel(Enchantment.INFINITY) == 1 && item.getItemFlags().equals(currentItem.getItemFlags());
+		return item != null && item.getType() == currentItem.getType() && item.getItemMeta().hasCustomModelData() && item.getItemMeta().getCustomModelData() == currentItem.getItemMeta().getCustomModelData() && item.getEnchantmentLevel(Enchantment.INFINITY) == 1 && item.getItemFlags().equals(currentItem.getItemFlags());
 	}
 
 	@Override

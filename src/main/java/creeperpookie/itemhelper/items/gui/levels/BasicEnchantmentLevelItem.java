@@ -1,4 +1,4 @@
-package creeperpookie.itemhelper.items.gui.enchantments.levels;
+package creeperpookie.itemhelper.items.gui.levels;
 
 import creeperpookie.itemhelper.items.CustomItem;
 import creeperpookie.itemhelper.items.ItemConstants;
@@ -59,14 +59,14 @@ public class BasicEnchantmentLevelItem implements CustomItem
 	public boolean isItem(ItemStack item)
 	{
 		ItemStack currentItem = getItemStack();
-		return item.getType() == currentItem.getType() && item.getItemMeta().hasCustomModelData() && item.getItemMeta().getCustomModelData() == currentItem.getItemMeta().getCustomModelData() && item.getEnchantmentLevel(Enchantment.INFINITY) == 1 && item.getItemFlags().equals(currentItem.getItemFlags());
+		return item != null && item.getType() == currentItem.getType() && item.getItemMeta().hasCustomModelData() && item.getItemMeta().getCustomModelData() == currentItem.getItemMeta().getCustomModelData() && item.getEnchantmentLevel(Enchantment.INFINITY) == 1 && item.getItemFlags().equals(currentItem.getItemFlags());
 	}
 
 	@Override
 	public boolean isItemType(@NotNull ItemType type)
 	{
 		CustomItem inputtedCustomItem = CustomItem.getItem(type);
-		return inputtedCustomItem != null && this.equals(inputtedCustomItem);
+		return this.equals(inputtedCustomItem);
 	}
 
 	@Override
