@@ -704,7 +704,7 @@ public class Utility
 	public static int getLevelFromLightLevel(int lightLevel)
 	{
 		// https://www.desmos.com/calculator/gm01dyvyzi
-		ItemHelperPlugin.getInstance().getLogger().info("Calculating enchanting level for light level " + lightLevel);
+		// ItemHelperPlugin.getInstance().getLogger().info("Calculating enchanting level for light level " + lightLevel);
 		if (lightLevel < 0) return 1;
 		return switch (lightLevel)
 		{

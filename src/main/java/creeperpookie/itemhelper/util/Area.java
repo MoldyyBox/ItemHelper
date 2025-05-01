@@ -86,7 +86,7 @@ public class Area
 		if (!isValid()) return null;
 		else if (pos1.equals(pos2)) return pos1.clone().add(0, yOffset, 0);
 		Location midpointBase = pos1.clone().add((pos1.getX() < pos2.getX() ? 1 : -1) * (xSize / 2.0), ((pos1.getY() < pos2.getY() ? 1 : -1) * ((ySize / 2.0) + yOffset)), (pos1.getZ() < pos2.getZ() ? 1 : -1) * (zSize / 2.0));
-		ItemHelperPlugin.getInstance().getLogger().info("Calculated center of " + Utility.locationAsString(pos1) + " to " + Utility.locationAsString(pos2) + " as " + Utility.locationAsString(volume % 2 == 0 ? midpointBase.toBlockLocation() : midpointBase.toCenterLocation()));
+		//ItemHelperPlugin.getInstance().getLogger().info("Calculated center of " + Utility.locationAsString(pos1) + " to " + Utility.locationAsString(pos2) + " as " + Utility.locationAsString(volume % 2 == 0 ? midpointBase.toBlockLocation() : midpointBase.toCenterLocation()));
 		return volume % 2 == 0 ? midpointBase.toBlockLocation() : midpointBase.toCenterLocation();
 	}
 
