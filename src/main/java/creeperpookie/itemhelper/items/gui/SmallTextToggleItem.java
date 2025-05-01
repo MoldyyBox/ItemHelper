@@ -57,7 +57,7 @@ public class SmallTextToggleItem implements CustomItem
 	public boolean isItem(ItemStack item)
 	{
 		ItemStack currentItem = getItemStack();
-		return item.getItemMeta().hasCustomModelData() && item.getItemMeta().getCustomModelData() == currentItem.getItemMeta().getCustomModelData() && item.getEnchantmentLevel(Enchantment.INFINITY) == 1 && item.getItemFlags().equals(currentItem.getItemFlags());
+		return item.hasItemMeta() || item.getItemMeta().hasCustomModelData() && item.getItemMeta().getCustomModelData() == currentItem.getItemMeta().getCustomModelData() && item.getEnchantmentLevel(Enchantment.INFINITY) == 1 && item.getItemFlags().equals(currentItem.getItemFlags());
 	}
 
 	@Override
