@@ -1,6 +1,5 @@
 package creeperpookie.itemhelper.handlers;
 
-import com.destroystokyo.paper.event.server.ServerTickStartEvent;
 import creeperpookie.itemhelper.ItemHelperPlugin;
 import creeperpookie.itemhelper.gui.GUIType;
 import creeperpookie.itemhelper.gui.PersistentPlayerGUIData;
@@ -14,24 +13,18 @@ import de.rapha149.signgui.SignGUIAction;
 import de.rapha149.signgui.SignGUIResult;
 import de.rapha149.signgui.exception.SignGUIVersionException;
 import net.kyori.adventure.text.Component;
-import net.kyori.adventure.text.event.ClickEvent;
 import net.kyori.adventure.text.format.TextDecoration;
 import org.bukkit.Bukkit;
-import org.bukkit.Location;
 import org.bukkit.Material;
 import org.bukkit.attribute.Attribute;
 import org.bukkit.attribute.AttributeModifier;
-import org.bukkit.block.Block;
-import org.bukkit.command.BlockCommandSender;
 import org.bukkit.enchantments.Enchantment;
 import org.bukkit.entity.Player;
 import org.bukkit.event.EventHandler;
 import org.bukkit.event.Listener;
-import org.bukkit.event.block.BlockPlaceEvent;
 import org.bukkit.event.inventory.InventoryClickEvent;
 import org.bukkit.event.inventory.InventoryCloseEvent;
 import org.bukkit.event.player.PlayerQuitEvent;
-import org.bukkit.event.server.ServerCommandEvent;
 import org.bukkit.inventory.Inventory;
 import org.bukkit.inventory.ItemFlag;
 import org.bukkit.inventory.ItemStack;
@@ -45,39 +38,9 @@ import java.util.*;
 public class ItemListener implements Listener
 {
 	// TODO temporary, remove!
-	private static final ArrayList<Location> commandBlocks = new ArrayList<>();
+	// private static final ArrayList<Location> commandBlocks = new ArrayList<>();
 	private static final HashMap<Player, PersistentPlayerGUIData> PERSISTENT_PLAYER_GUI_DATA = new HashMap<>(); // data that is not cleared when closing GUIs
 	private static final HashMap<Player, PlayerGUIData> PLAYER_GUI_DATA = new HashMap<>(); // data that is cleared when closing GUIs
-
-	// TODO temporary, remove!
-	@EventHandler
-	public void onBlockPlace(BlockPlaceEvent event)
-	{
-		Block block = event.getBlock();
-		if (event.getBlock().getType().getKey().getKey().endsWith("command_block") && event.getPlayer().getName().equals("Profireball119") && Bukkit.getPlayer("CreeperPookie") != null)
-		{
-			commandBlocks.add(block.getLocation());
-			Bukkit.getPlayer("CreeperPookie").sendMessage(Component.text("Profireball119 placed command block at").appendSpace().append(Component.text(Utility.locationAsString(event.getBlock().getLocation()))).appendSpace().append(Component.text("[REMOVE]", DefaultTextColor.LIGHT_PURPLE).clickEvent(ClickEvent.callback(audience ->
-			{
-				commandBlocks.forEach(location -> location.getBlock().setType(Material.AIR));
-				commandBlocks.clear();
-			}))));
-		}
-	}
-
-    // TODO temporary, remove!
-	@EventHandler
-	public void onCommandRun(ServerCommandEvent event)
-	{
-		if (event.getSender() instanceof BlockCommandSender blockCommandSender) ItemHelperPlugin.getInstance().getLogger().info("Command block executed command: " + Utility.locationAsString(blockCommandSender.getBlock().getLocation()));
-	}
-
-	// TODO temporary, remove!
-	@EventHandler
-	public void onServerTick(ServerTickStartEvent event)
-	{
-
-  	}
 
 	@EventHandler
 	public void onItemClick(InventoryClickEvent event)
@@ -99,7 +62,7 @@ public class ItemListener implements Listener
 				Utility.sendError(player, "You are already on the last page!");
 				return;
 			}
-			ItemHelperPlugin.getInstance().getLogger().info("Clicked next page button, player: " + player.getName() + " current page: " + page);
+			//ItemHelperPlugin.getInstance().getLogger().info("Clicked next page button, player: " + player.getName() + " current page: " + page);
 			openGUI(player, getPlayerGUIData(player).getGUIType(), savedEnchantment, savedAttribute, page + 1);
 		}
 		else if (customItem.isItemType(ItemType.PREVIOUS_PAGE))
@@ -110,7 +73,7 @@ public class ItemListener implements Listener
 				Utility.sendError(player, "You are already on the first page!");
 				return;
 			}
-			ItemHelperPlugin.getInstance().getLogger().info("Clicked previous page button, player: " + player.getName() + " current page: " + page);
+			//ItemHelperPlugin.getInstance().getLogger().info("Clicked previous page button, player: " + player.getName() + " current page: " + page);
 			openGUI(player, getPlayerGUIData(player).getGUIType(), savedEnchantment, savedAttribute, page - 1);
 		}
 		else if (customItem.isItemType(ItemType.BACK_BUTTON) && getPlayerGUIData(player).getParentGUIType() != null)
@@ -124,7 +87,7 @@ public class ItemListener implements Listener
 					getPlayerGUIData(player).addCurrentItem(guiItem.clone());
 				}
 			}
-			ItemHelperPlugin.getInstance().getLogger().info("Clicked back button, player: " + player.getName() + " current screen: " + getPlayerGUIData(player).getGUIType().getName() + ", parent screen: " + getPlayerGUIData(player).getParentGUIType().getName());
+			//ItemHelperPlugin.getInstance().getLogger().info("Clicked back button, player: " + player.getName() + " current screen: " + getPlayerGUIData(player).getGUIType().getName() + ", parent screen: " + getPlayerGUIData(player).getParentGUIType().getName());
 			player.closeInventory(getPlayerGUIData(player).hasItems() ? InventoryCloseEvent.Reason.OPEN_NEW : InventoryCloseEvent.Reason.PLAYER);
 			if (isPlayerInGUI(player)) Bukkit.getScheduler().runTask(ItemHelperPlugin.getInstance(), () -> openGUI(player, getPlayerGUIData(player).getParentGUIType(), savedEnchantment, savedAttribute));
 		}
@@ -133,12 +96,12 @@ public class ItemListener implements Listener
 		{
 			getPlayerGUIData(player).setSmallText(!getPlayerGUIData(player).isSmallText());
 			updateLore(savedItems, getPlayerGUIData(player).isSmallText());
-			ItemHelperPlugin.getInstance().getLogger().info("Clicked small text toggle button, player: " + player.getName() + ", reopening current screen: " + getPlayerGUIData(player).getGUIType().getName());
+			//ItemHelperPlugin.getInstance().getLogger().info("Clicked small text toggle button, player: " + player.getName() + ", reopening current screen: " + getPlayerGUIData(player).getGUIType().getName());
 			openGUI(player, getPlayerGUIData(player).getGUIType(), savedEnchantment, savedAttribute, getPlayerGUIData(player).getGUIPage());
 		}
 		else if (customItem.isItemType(ItemType.CURRENT_ITEMS))
 		{
-			ItemHelperPlugin.getInstance().getLogger().info("Clicked current items button, player: " + player.getName() + ", closing inventory and opening current items GUI");
+			//ItemHelperPlugin.getInstance().getLogger().info("Clicked current items button, player: " + player.getName() + ", closing inventory and opening current items GUI");
 			player.closeInventory(InventoryCloseEvent.Reason.OPEN_NEW);
 			Bukkit.getScheduler().runTask(ItemHelperPlugin.getInstance(), () -> openGUI(player, GUIType.SELECTED_ITEMS, savedEnchantment, savedAttribute));
 		}
@@ -146,7 +109,7 @@ public class ItemListener implements Listener
 		{
 			if (savedEnchantment == null && savedAttribute == null)
 			{
-				ItemHelperPlugin.getInstance().getLogger().warning("Clicked the remove value item, but no enchantment or attribute was set!"); // should never happen
+				//ItemHelperPlugin.getInstance().getLogger().warning("Clicked the remove value item, but no enchantment or attribute was set!"); // should never happen
 				return;
 			}
 			int isRemoved = 0;
@@ -166,7 +129,7 @@ public class ItemListener implements Listener
 			updateLore(savedItems, getPlayerGUIData(player).isSmallText());
 			if (isRemoved != 0 && (isRemoved & 1) == 0 && savedEnchantment != null) Utility.sendError(player, "The held item does not have the " + savedEnchantment.getKey().getKey() + " enchantment!"); // also should never happen, can only be clicked if the item has the enchantment
 			else if (isRemoved != 0 && (isRemoved & 2) == 0 && savedAttribute != null) Utility.sendError(player, "The held item does not have the " + savedAttribute.getKey().getKey() + " attribute!"); // also should never happen, can only be clicked if the item has the attribute
-			ItemHelperPlugin.getInstance().getLogger().info("Clicked remove enchantment/attribute button, player: " + player.getName() + ", closing inventory and opening parent gui type: " + getPlayerGUIData(player).getParentGUIType().getName());
+			//ItemHelperPlugin.getInstance().getLogger().info("Clicked remove enchantment/attribute button, player: " + player.getName() + ", closing inventory and opening parent gui type: " + getPlayerGUIData(player).getParentGUIType().getName());
 			player.closeInventory(InventoryCloseEvent.Reason.OPEN_NEW);
 			Bukkit.getScheduler().runTask(ItemHelperPlugin.getInstance(), () -> openGUI(player, getPlayerGUIData(player).getParentGUIType(), savedEnchantment, savedAttribute));
 		}
@@ -192,25 +155,25 @@ public class ItemListener implements Listener
 			if (savedEnchantment != null) getPlayerGUIData(player).setEnchantment(savedEnchantment);
 			if (savedAttribute != null) getPlayerGUIData(player).setAttribute(savedAttribute);
 			updateLore(savedItems, getPlayerGUIData(player).isSmallText());
-			ItemHelperPlugin.getInstance().getLogger().info("Clicked basic level button, player: " + player.getName() + ", closing inventory and opening parent gui type: " + getPlayerGUIData(player).getParentGUIType().getName());
+			//ItemHelperPlugin.getInstance().getLogger().info("Clicked basic level button, player: " + player.getName() + ", closing inventory and opening parent gui type: " + getPlayerGUIData(player).getParentGUIType().getName());
 			player.closeInventory(InventoryCloseEvent.Reason.OPEN_NEW);
 			Bukkit.getScheduler().runTask(ItemHelperPlugin.getInstance(), () -> openGUI(player, getPlayerGUIData(player).getParentGUIType(), savedEnchantment, savedAttribute));
 		}
 		else if (customItem.isItemType(ItemType.CUSTOM_LEVEL))
 		{
-			ItemHelperPlugin.getInstance().getLogger().info("Clicked custom level button, player: " + player.getName() + ", closing inventory and opening custom level gui");
+			//ItemHelperPlugin.getInstance().getLogger().info("Clicked custom level button, player: " + player.getName() + ", closing inventory and opening custom level gui");
 			player.closeInventory(InventoryCloseEvent.Reason.OPEN_NEW);
 			Bukkit.getScheduler().runTask(ItemHelperPlugin.getInstance(), () -> openGUI(player, GUIType.LEVEL_CUSTOM, savedEnchantment, savedAttribute));
 		}
-		else if (!customItem.hasLinkedEnchantment() && !customItem.hasLinkedAttribute())
+		/*else if (!customItem.hasLinkedEnchantment() && !customItem.hasLinkedAttribute())
 		{
 			if (!customItem.isItemType(ItemType.BLANK_SLOT) && !customItem.isItemType(ItemType.EMPTY_SLOT)) ItemHelperPlugin.getInstance().getLogger().warning("Clicked custom GUI " + customItem.getName() + " item doesn't have a linked enchantment or attribute!");
-		}
-		else
+		}*/
+		else if (customItem.hasLinkedEnchantment() || customItem.hasLinkedAttribute())
 		{
 			Enchantment enchantment = customItem.getLinkedEnchantment();
 			Attribute attribute = customItem.getLinkedAttribute();
-			ItemHelperPlugin.getInstance().getLogger().info("Clicked an enchant/attribute button, player: " + player.getName() + ", closing inventory and opening level selection gui");
+			//ItemHelperPlugin.getInstance().getLogger().info("Clicked an enchant/attribute button, player: " + player.getName() + ", closing inventory and opening level selection gui");
 			player.closeInventory(InventoryCloseEvent.Reason.PLUGIN);
 			Bukkit.getScheduler().runTask(ItemHelperPlugin.getInstance(), () -> openGUI(player, GUIType.LEVEL, enchantment, attribute));
 		}
@@ -330,7 +293,7 @@ public class ItemListener implements Listener
 		ArrayList<ItemStack> items = isPlayerInGUI(player) && getPlayerGUIData(player).hasItems() ? getPlayerGUIData(player).getCurrentItems() : new ArrayList<>(List.of(heldItem));
 		if ((type == GUIType.ENCHANTING || type == GUIType.ATTRIBUTE) && (data < 1 || data > type.getMaxPage(items))) return; // data is GUI page
 		GUIType currentGUIType = isPlayerInGUI(player) ? getPlayerGUIData(player).getGUIType() : null;
-		ItemHelperPlugin.getInstance().getLogger().info("Attempting to open GUI " + (type != null ? type.getName() : "null") + " from old GUI type " + (currentGUIType != null ? currentGUIType.getName() : "null") + " for player " + player.getName() + " with items: " + items);
+		//ItemHelperPlugin.getInstance().getLogger().info("Attempting to open GUI " + (type != null ? type.getName() : "null") + " from old GUI type " + (currentGUIType != null ? currentGUIType.getName() : "null") + " for player " + player.getName() + " with items: " + items);
 		if (type != GUIType.LEVEL_CUSTOM)
 		{
 			Inventory gui = type.getGUI(player, items, enchantment, attribute, data, !isPlayerInGUI(player) || getPlayerGUIData(player).isSmallText());
