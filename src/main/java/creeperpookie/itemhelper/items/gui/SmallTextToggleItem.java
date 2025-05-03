@@ -20,7 +20,6 @@ public class SmallTextToggleItem implements CustomItem
 	@NotNull
 	public ItemStack getItemStack(int data)
 	{
-
 		ItemStack item = new ItemStack(data == 0 ? Material.RED_CONCRETE : Material.GREEN_CONCRETE);
 		item.editMeta(meta ->
 		{
@@ -64,7 +63,7 @@ public class SmallTextToggleItem implements CustomItem
 	public boolean isItemType(@NotNull ItemType type)
 	{
 		CustomItem inputtedCustomItem = CustomItem.getItem(type);
-		return inputtedCustomItem != null && this.equals(inputtedCustomItem);
+		return this.equals(inputtedCustomItem);
 	}
 
 	@Override

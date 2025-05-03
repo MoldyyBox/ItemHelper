@@ -58,22 +58,30 @@ public enum GUIType
 	{
 		if (items.isEmpty()) throw new IllegalArgumentException("Tried to get an " + getName() + " GUI with no held items from player " + player.getName());
 		else if (this == LEVEL && enchantment == null && attribute == null) throw new IllegalArgumentException("Tried to get an " + getName() + " GUI for no enchantment or attribute from player " + player.getName());
-		else if (page < 1) throw new IllegalArgumentException("Tried to get an " + getName() + " GUI for an invalid page number " + page + " from player " + player.getName());
+		else if (page < 0) throw new IllegalArgumentException("Tried to get an " + getName() + " GUI for an invalid page number " + page + " from player " + player.getName());
 		else return Utility.copyInventory(switch (this)
 		{
 			case STORED_ITEMS ->
 			{
+				if (page > getMaxPage()) throw new IllegalArgumentException("Tried to get an " + getName() + " GUI for an invalid page number " + page + " from player " + player.getName());
+				int startIndex = (52 * page);
 				Inventory gui = Bukkit.createInventory(null, 54, getTitle());
-				for (int i = 0; i < Math.min(items.size(), 54); i++) gui.setItem(i, items.get(i));
+				for (int index = 0, itemIndex = startIndex; itemIndex < items.size(); index++, itemIndex++)
+				{
+					ItemStack item = items.get(itemIndex);
+					gui.setItem(index, item == null ? ItemStack.empty() : item.clone());
+					if (index >= gui.getSize() - 2) break;
+				}
+				gui.setItem(gui.getSize() - 2, CustomItem.getItem(ItemType.PREVIOUS_PAGE).getItemStack());
+				gui.setItem(gui.getSize() - 1, CustomItem.getItem(ItemType.NEXT_PAGE).getItemStack());
 				yield gui;
 			}
 			case SELECTED_ITEMS ->
 			{
 				// TODO verify GUI generates correctly
-				int maxPage = getMaxPage(items);
-				if (page > maxPage) throw new IllegalArgumentException("Tried to get an " + getName() + " GUI for an invalid page number " + page + " from player " + player.getName());
-				int startIndex = (54 * (page - 1));
-				Inventory gui = Bukkit.createInventory(null, 54, SELECTED_ITEMS_GUI_TITLE);
+				if (page > getMaxPage()) throw new IllegalArgumentException("Tried to get an " + getName() + " GUI for an invalid page number " + page + " from player " + player.getName());
+				int startIndex = (51 * page);
+				Inventory gui = Bukkit.createInventory(null, 54, getTitle());
 				for (int index = 1, itemIndex = startIndex; itemIndex < items.size(); index++, itemIndex++)
 				{
 					ItemStack item = items.get(itemIndex);
@@ -87,7 +95,7 @@ public enum GUIType
 			}
 			case ENCHANTING, ATTRIBUTE ->
 			{
-				Inventory gui = Utility.copyInventory(page == 1 ? this == ENCHANTING ? ENCHANTING_GUI_1 : ATTRIBUTE_GUI_1 : this == ENCHANTING ? ENCHANTING_GUI_2 : ATTRIBUTE_GUI_2, getTitle());
+				Inventory gui = Utility.copyInventory(page == 0 ? this == ENCHANTING ? ENCHANTING_GUI_1 : ATTRIBUTE_GUI_1 : this == ENCHANTING ? ENCHANTING_GUI_2 : ATTRIBUTE_GUI_2, getTitle());
 				gui.setItem(13, CustomItem.getItem(ItemType.CURRENT_ITEMS).getItemStack(items.size()));
 				gui.setItem(15, CustomItem.getItem(ItemType.SMALL_TEXT_TOGGLE).getItemStack(useSmallText ? 1 : 0));
 				yield gui;
@@ -118,16 +126,12 @@ public enum GUIType
 		};
 	}
 
-	public int getMaxPage(ArrayList<ItemStack> items)
+	public int getMaxPage()
 	{
 		return switch (this)
 		{
-			case STORED_ITEMS, LEVEL, LEVEL_CUSTOM -> 1;
-			case SELECTED_ITEMS ->
-			{
-				if (items.size() <= 54) yield 1;
-				else yield (items.size() / 54) + 1;
-			}
+			case STORED_ITEMS, SELECTED_ITEMS -> Integer.MAX_VALUE;
+			case LEVEL, LEVEL_CUSTOM -> 1;
 			case ENCHANTING, ATTRIBUTE -> 2;
 		};
 	}

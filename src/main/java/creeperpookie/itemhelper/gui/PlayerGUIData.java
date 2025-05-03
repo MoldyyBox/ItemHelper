@@ -11,7 +11,8 @@ import java.util.ArrayList;
 
 public class PlayerGUIData
 {
-	private final ArrayList<ItemStack> currentItems;
+	@NotNull private final ItemStack initialItem;
+	@NotNull private final ArrayList<ItemStack> currentItems;
 	private int guiPage;
 	@Nullable GUIType parentGUIType;
 	@NotNull private GUIType guiType;
@@ -19,8 +20,9 @@ public class PlayerGUIData
 	@Nullable Attribute attribute;
 	private boolean smallText;
 
-	public PlayerGUIData(@NotNull ArrayList<ItemStack> items, int guiPage, @Nullable GUIType parentGUIType, @NotNull GUIType guiType, @Nullable Enchantment enchantment, @Nullable Attribute attribute, boolean smallText)
+	public PlayerGUIData(@NotNull ItemStack initialItem, @NotNull ArrayList<ItemStack> items, int guiPage, @Nullable GUIType parentGUIType, @NotNull GUIType guiType, @Nullable Enchantment enchantment, @Nullable Attribute attribute, boolean smallText)
 	{
+		this.initialItem = initialItem;
 		this.currentItems = items;
 		this.guiPage = guiPage;
 		this.parentGUIType = parentGUIType;
@@ -28,6 +30,12 @@ public class PlayerGUIData
 		this.enchantment = enchantment;
 		this.attribute = attribute;
 		this.smallText = smallText;
+	}
+
+	@NotNull
+	public ItemStack getInitialItem()
+	{
+		return initialItem;
 	}
 
 	public boolean hasItems()
@@ -40,18 +48,21 @@ public class PlayerGUIData
 		return hasItems() && currentItems.contains(item);
 	}
 
-	@Nullable
+	@NotNull
 	public ArrayList<ItemStack> getCurrentItems()
 	{
 		return currentItems;
 	}
 
-	public void setCurrentItems(ArrayList<ItemStack> items)
+	public void setCurrentItems(@NotNull ArrayList<ItemStack> items)
 	{
 		if (this.currentItems != items && !items.isEmpty())
 		{
 			clearCurrentItems();
-			this.currentItems.addAll(items);
+			items.forEach(item ->
+			{
+				if (item != null && !item.isEmpty()) this.currentItems.add(item);
+			});
 		}
 	}
 
@@ -60,9 +71,10 @@ public class PlayerGUIData
 		this.currentItems.clear();
 	}
 
-	public void addCurrentItem(ItemStack item)
+	public void addCurrentItem(@NotNull ItemStack item)
 	{
-		if (!Utility.isItemSimilar(currentItems, item)) this.currentItems.add(item);
+		if (item.isEmpty()) return;
+		else if (!Utility.isItemSimilar(currentItems, item)) this.currentItems.add(item);
 		else
 		{
 			int index = Utility.getFirstSimilarIndex(currentItems, item);

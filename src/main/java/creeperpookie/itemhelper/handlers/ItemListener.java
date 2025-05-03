@@ -25,6 +25,7 @@ import org.bukkit.event.Listener;
 import org.bukkit.event.inventory.InventoryClickEvent;
 import org.bukkit.event.inventory.InventoryCloseEvent;
 import org.bukkit.event.player.PlayerQuitEvent;
+import org.bukkit.inventory.CraftingInventory;
 import org.bukkit.inventory.Inventory;
 import org.bukkit.inventory.ItemFlag;
 import org.bukkit.inventory.ItemStack;
@@ -33,12 +34,12 @@ import org.bukkit.inventory.meta.BlockDataMeta;
 import org.jetbrains.annotations.NotNull;
 
 import javax.annotation.Nullable;
-import java.util.*;
+import java.util.ArrayList;
+import java.util.HashMap;
+import java.util.List;
 
 public class ItemListener implements Listener
 {
-	// TODO temporary, remove!
-	// private static final ArrayList<Location> commandBlocks = new ArrayList<>();
 	private static final HashMap<Player, PersistentPlayerGUIData> PERSISTENT_PLAYER_GUI_DATA = new HashMap<>(); // data that is not cleared when closing GUIs
 	private static final HashMap<Player, PlayerGUIData> PLAYER_GUI_DATA = new HashMap<>(); // data that is cleared when closing GUIs
 
@@ -50,8 +51,9 @@ public class ItemListener implements Listener
 		{
 			Inventory inventory = event.getClickedInventory();
 			ItemStack item = event.getCurrentItem();
-			if (!isPlayerInGUI(player) || inventory instanceof PlayerInventory || item == null || !CustomItem.isCustomItem(item)) return;
-			if (getPlayerGUIData(player).getGUIType() != GUIType.SELECTED_ITEMS || CustomItem.isCustomItem(item)) event.setCancelled(true);
+			if (!isPlayerInGUI(player) || inventory == null || inventory instanceof PlayerInventory || item == null || !CustomItem.isCustomItem(item)) return;
+			GUIType guiType = getPlayerGUIData(player).getGUIType();
+			if (guiType != GUIType.SELECTED_ITEMS || CustomItem.isCustomItem(item)) event.setCancelled(true);
 			ArrayList<ItemStack> savedItems = getPlayerGUIData(player).getCurrentItems();
 			Enchantment savedEnchantment = getPlayerGUIData(player).getEnchantment();
 			Attribute savedAttribute = getPlayerGUIData(player).getAttribute();
@@ -59,41 +61,33 @@ public class ItemListener implements Listener
 			if (customItem.isItemType(ItemType.NEXT_PAGE))
 			{
 				int page = getPlayerGUIData(player).getGUIPage();
-				if (page >= getPlayerGUIData(player).getGUIType().getMaxPage(getPlayerGUIData(player).getCurrentItems()))
+				if (page >= guiType.getMaxPage())
 				{
 					Utility.sendError(player, "You are already on the last page!");
 					return;
 				}
+				if (guiType == GUIType.SELECTED_ITEMS || guiType == GUIType.STORED_ITEMS) recheckGUIItems(inventory, guiType == GUIType.SELECTED_ITEMS ? savedItems : hasPersistentGUIData(player) ? getPersistentGUIData(player).getUnretrievedItems() : List.of(), page, guiType == GUIType.SELECTED_ITEMS ? 1 : 0, 52, guiType == GUIType.SELECTED_ITEMS);
 				//ItemHelperPlugin.getInstance().getLogger().info("Clicked next page button, player: " + player.getName() + " current page: " + page);
-				openGUI(player, getPlayerGUIData(player).getGUIType(), savedEnchantment, savedAttribute, page + 1);
+				openGUI(player, guiType, savedEnchantment, savedAttribute, page + 1);
 			}
 			else if (customItem.isItemType(ItemType.PREVIOUS_PAGE))
 			{
 				int page = getPlayerGUIData(player).getGUIPage();
-				if (page <= 1)
+				if (page <= 0)
 				{
 					Utility.sendError(player, "You are already on the first page!");
 					return;
 				}
+				if (guiType == GUIType.SELECTED_ITEMS || guiType == GUIType.STORED_ITEMS) recheckGUIItems(inventory, guiType == GUIType.SELECTED_ITEMS ? savedItems : hasPersistentGUIData(player) ? getPersistentGUIData(player).getUnretrievedItems() : List.of(), page, guiType == GUIType.SELECTED_ITEMS ? 1 : 0, 52, guiType == GUIType.SELECTED_ITEMS);
 				//ItemHelperPlugin.getInstance().getLogger().info("Clicked previous page button, player: " + player.getName() + " current page: " + page);
-				openGUI(player, getPlayerGUIData(player).getGUIType(), savedEnchantment, savedAttribute, page - 1);
+				openGUI(player, guiType, savedEnchantment, savedAttribute, page - 1);
 			}
 			else if (customItem.isItemType(ItemType.BACK_BUTTON) && getPlayerGUIData(player).getParentGUIType() != null)
 			{
-				if (getPlayerGUIData(player).getGUIType() == GUIType.SELECTED_ITEMS)
-				{
-					for (int index = 0; index < inventory.getSize(); index++)
-					{
-						ItemStack guiItem = inventory.getItem(index);
-						if (guiItem == null || guiItem.isEmpty() || CustomItem.isCustomItem(guiItem) || index == 0 || index > inventory.getSize() - 2)
-							continue;
-						getPlayerGUIData(player).addCurrentItem(guiItem.clone());
-					}
-				}
+				if (guiType == GUIType.SELECTED_ITEMS) recheckGUIItems(inventory, getPlayerGUIData(player).getCurrentItems(), getPlayerGUIData(player).getGUIPage(), 1, 52, true);
 				//ItemHelperPlugin.getInstance().getLogger().info("Clicked back button, player: " + player.getName() + " current screen: " + getPlayerGUIData(player).getGUIType().getName() + ", parent screen: " + getPlayerGUIData(player).getParentGUIType().getName());
 				player.closeInventory(getPlayerGUIData(player).hasItems() ? InventoryCloseEvent.Reason.OPEN_NEW : InventoryCloseEvent.Reason.PLAYER);
-				if (isPlayerInGUI(player))
-					Bukkit.getScheduler().runTask(ItemHelperPlugin.getInstance(), () -> openGUI(player, getPlayerGUIData(player).getParentGUIType(), savedEnchantment, savedAttribute));
+				if (isPlayerInGUI(player)) Bukkit.getScheduler().runTask(ItemHelperPlugin.getInstance(), () -> openGUI(player, getPlayerGUIData(player).getParentGUIType(), savedEnchantment, savedAttribute));
 			}
 			//else if (Utility.isItemSimilar(savedItems, item) && getPlayerGUIData(player).getGUIType() == GUIType.ENCHANTING) player.closeInventory(InventoryCloseEvent.Reason.PLAYER);
 			else if (customItem.isItemType(ItemType.SMALL_TEXT_TOGGLE))
@@ -101,7 +95,7 @@ public class ItemListener implements Listener
 				getPlayerGUIData(player).setSmallText(!getPlayerGUIData(player).isSmallText());
 				updateLore(savedItems, getPlayerGUIData(player).isSmallText());
 				//ItemHelperPlugin.getInstance().getLogger().info("Clicked small text toggle button, player: " + player.getName() + ", reopening current screen: " + getPlayerGUIData(player).getGUIType().getName());
-				openGUI(player, getPlayerGUIData(player).getGUIType(), savedEnchantment, savedAttribute, getPlayerGUIData(player).getGUIPage());
+				openGUI(player, guiType, savedEnchantment, savedAttribute, getPlayerGUIData(player).getGUIPage());
 			}
 			else if (customItem.isItemType(ItemType.CURRENT_ITEMS))
 			{
@@ -119,6 +113,7 @@ public class ItemListener implements Listener
 				int isRemoved = 0;
 				for (ItemStack savedItem : savedItems)
 				{
+					if (savedItem == null || savedItem.isEmpty()) continue;
 					if (savedEnchantment != null && savedItem.containsEnchantment(savedEnchantment))
 					{
 						isRemoved |= 1;
@@ -144,8 +139,8 @@ public class ItemListener implements Listener
 				int level = Utility.getLevelFromLightLevel(Integer.parseInt(blockData.split(",")[Utility.arrayIndexOfSubstring(blockData.split(","), "level")].split("=")[1]));
 				savedItems.forEach(savedItem ->
 				{
-					if (!savedItem.hasItemMeta())
-						savedItem.setItemMeta(Bukkit.getItemFactory().getItemMeta(savedItem.getType()));
+					if (savedItem == null || savedItem.isEmpty()) return;
+					if (!savedItem.hasItemMeta()) savedItem.setItemMeta(Bukkit.getItemFactory().getItemMeta(savedItem.getType()));
 					if (savedEnchantment != null) savedItem.addUnsafeEnchantment(savedEnchantment, level);
 					else if (savedAttribute != null)
 					{
@@ -198,21 +193,30 @@ public class ItemListener implements Listener
 		try
 		{
 			Inventory inventory = event.getInventory();
-			if (!isPlayerInGUI(player) || inventory instanceof PlayerInventory) return;
+			if (!isPlayerInGUI(player) || inventory instanceof PlayerInventory || inventory instanceof CraftingInventory) return;
 			for (int index = 0; index < inventory.getSize(); index++)
 			{
 				ItemStack item = inventory.getItem(index);
-				if (CustomItem.isCustomItem(item))
-					inventory.setItem(index, ItemStack.empty()); // Don't clear non-custom items
+				if (CustomItem.isCustomItem(item)) inventory.setItem(index, ItemStack.empty()); // Don't clear non-custom items
 			}
-			if (getPlayerGUIData(player).getGUIType() != GUIType.SELECTED_ITEMS && event.getReason() != InventoryCloseEvent.Reason.OPEN_NEW && event.getReason() != InventoryCloseEvent.Reason.PLUGIN)
+			if (getPlayerGUIData(player).getGUIType() != GUIType.SELECTED_ITEMS && getPlayerGUIData(player).getGUIType() != GUIType.STORED_ITEMS && event.getReason() != InventoryCloseEvent.Reason.OPEN_NEW && event.getReason() != InventoryCloseEvent.Reason.PLUGIN)
 			{
 				ArrayList<ItemStack> items = getPlayerGUIData(player).getCurrentItems();
+				if (items.size() == 1 && items.getFirst().equals(getPlayerGUIData(player).getInitialItem()))
+				{
+					player.sendActionBar(Component.text("No changes were applied to your", DefaultTextColor.GOLD).appendSpace().append(items.getFirst().effectiveName().color(DefaultTextColor.AQUA).decoration(TextDecoration.ITALIC, false)));
+					return;
+				}
 				GUIType guiType = getPlayerGUIData(player).getGUIType();
 				if (Utility.getEmptySlotCount(player.getInventory()) < items.size())
 				{
 					Utility.sendError(player, "You do not have enough space in your inventory to retrieve your items!\nYou can retrieve your items again with the /ih items command.");
+					if (!hasPersistentGUIData(player)) PERSISTENT_PLAYER_GUI_DATA.put(player, new PersistentPlayerGUIData());
 					getPersistentGUIData(player).addUnretrievedItems(items);
+				}
+				else
+				{
+					items.forEach(item -> player.getInventory().setItem(player.getInventory().firstEmpty(), item.clone()));
 				}
 				int dataTypesSet = 0;
 				int enchantments = 0;
@@ -251,13 +255,21 @@ public class ItemListener implements Listener
 					}
 					player.sendActionBar(base);
 				}
-				else
-					player.sendActionBar(((Component.text("Successfully removed all").appendSpace().append(Component.text(guiType == GUIType.ENCHANTING ? "enchantments" : "attributes")).appendSpace().append(Component.text("from your")).color(DefaultTextColor.GREEN)).appendSpace().append((items.size() == 1 ? items.getFirst().effectiveName().color(DefaultTextColor.LIGHT_PURPLE) : Component.text("items")).append(Component.text("!", DefaultTextColor.GREEN))).decoration(TextDecoration.ITALIC, false)));
+				else player.sendActionBar(((Component.text("Successfully removed all").appendSpace().append(Component.text(guiType == GUIType.ENCHANTING ? "enchantments" : "attributes")).appendSpace().append(Component.text("from your")).color(DefaultTextColor.GREEN)).appendSpace().append((items.size() == 1 ? items.getFirst().effectiveName().color(DefaultTextColor.LIGHT_PURPLE) : Component.text("items")).append(Component.text("!", DefaultTextColor.GREEN))).decoration(TextDecoration.ITALIC, false)));
 				PLAYER_GUI_DATA.remove(player);
+			}
+			else if (getPlayerGUIData(player).getGUIType() == GUIType.STORED_ITEMS && event.getReason() != InventoryCloseEvent.Reason.OPEN_NEW && event.getReason() != InventoryCloseEvent.Reason.PLUGIN)
+			{
+				recheckGUIItems(inventory, getPersistentGUIData(player).getUnretrievedItems(), getPlayerGUIData(player).getGUIPage(), 0, 52, false);
 			}
 			else if (getPlayerGUIData(player).getGUIType() == GUIType.SELECTED_ITEMS && event.getReason() != InventoryCloseEvent.Reason.OPEN_NEW && event.getReason() != InventoryCloseEvent.Reason.PLUGIN)
 			{
-
+				recheckGUIItems(inventory, getPlayerGUIData(player).getCurrentItems(), getPlayerGUIData(player).getGUIPage(), 1, 52, true);
+				if (getPlayerGUIData(player).getCurrentItems().isEmpty())
+				{
+					player.sendActionBar(Component.text("Successfully applied all").appendSpace().append(Component.text(getPlayerGUIData(player).hasEnchantment() ? "enchantments" : "attributes")).appendSpace().append(Component.text("to your items")).color(DefaultTextColor.GREEN));
+					clearPlayerGUIData(player);
+				}
 			}
 		}
 		catch (Exception e)
@@ -276,6 +288,25 @@ public class ItemListener implements Listener
 		{
 			clearPlayerGUIData(player);
 			player.closeInventory(InventoryCloseEvent.Reason.PLUGIN);
+		}
+	}
+
+	private static void recheckGUIItems(Inventory inventory, List<ItemStack> items, int page, int minSlot, int maxSlot, boolean addItemsAllowed)
+	{
+		if (page < 0) page = 0;
+		int itemIndex = ((page) * (maxSlot - minSlot));
+		int itemsOnPage = items.size() - itemIndex;
+		for (int index = minSlot; index < maxSlot; index++)
+		{
+			if (itemIndex < items.size()) items.remove(itemIndex);
+			else break;
+		}
+		for (int inventoryIndex = minSlot; inventoryIndex < maxSlot; inventoryIndex++)
+		{
+			int itemSlot = ((page) * (maxSlot - minSlot)) + (inventoryIndex - minSlot);
+			ItemStack inventoryItem = inventory.getItem(inventoryIndex);
+			if ((addItemsAllowed || (inventoryIndex < itemsOnPage)) && inventoryItem != null && !inventoryItem.isEmpty() && itemSlot < items.size()) items.add(itemSlot, inventoryItem);
+			else if ((addItemsAllowed || (inventoryIndex < itemsOnPage)) && inventoryItem != null && !inventoryItem.isEmpty() && itemSlot >= items.size()) items.add(inventoryItem);
 		}
 	}
 
@@ -311,49 +342,59 @@ public class ItemListener implements Listener
 
 	public static void openGUI(Player player, GUIType type, @Nullable Enchantment enchantment, @Nullable Attribute attribute)
 	{
-		openGUI(player, type, enchantment, attribute, 1);
+		openGUI(player, type, enchantment, attribute, 0);
 	}
 
 	public static void openGUI(Player player, @NotNull GUIType type, @Nullable Enchantment enchantment, @Nullable Attribute attribute, int data)
 	{
-		ItemStack heldItem = player.getInventory().getItemInMainHand().isEmpty() ? player.getInventory().getItemInOffHand().isEmpty() ? ItemStack.empty() : player.getInventory().getItemInOffHand() : player.getInventory().getItemInMainHand();
-		ArrayList<ItemStack> items = isPlayerInGUI(player) && getPlayerGUIData(player).hasItems() ? getPlayerGUIData(player).getCurrentItems() : new ArrayList<>(List.of(heldItem));
-		if ((type == GUIType.ENCHANTING || type == GUIType.ATTRIBUTE) && (data < 1 || data > type.getMaxPage(items))) return; // data is GUI page
-		GUIType currentGUIType = isPlayerInGUI(player) ? getPlayerGUIData(player).getGUIType() : null;
-		//ItemHelperPlugin.getInstance().getLogger().info("Attempting to open GUI " + (type != null ? type.getName() : "null") + " from old GUI type " + (currentGUIType != null ? currentGUIType.getName() : "null") + " for player " + player.getName() + " with items: " + items);
-		if (type != GUIType.LEVEL_CUSTOM)
+		try
 		{
-			Inventory gui = type.getGUI(player, items, enchantment, attribute, data, !isPlayerInGUI(player) || getPlayerGUIData(player).isSmallText());
-			if (isPlayerInGUI(player) && currentGUIType == type && getPlayerGUIData(player).getGUIPage() > -1) Utility.replaceGUI(player.getOpenInventory().getTopInventory(), gui);
-			else player.openInventory(gui);
-		}
-		else
-		{
-			SignGUI signGUI;
-			try
+			ItemStack heldItem = player.getInventory().getItemInMainHand().isEmpty() ? player.getInventory().getItemInOffHand().isEmpty() ? ItemStack.empty() : player.getInventory().getItemInOffHand().clone() : player.getInventory().getItemInMainHand().clone();
+			ArrayList<ItemStack> items = isPlayerInGUI(player) && getPlayerGUIData(player).hasItems() ? getPlayerGUIData(player).getCurrentItems() : new ArrayList<>(List.of(heldItem));
+			if ((type == GUIType.ENCHANTING || type == GUIType.ATTRIBUTE) && (data < 0 || data > type.getMaxPage())) return; // data is GUI page
+			GUIType currentGUIType = isPlayerInGUI(player) ? getPlayerGUIData(player).getGUIType() : null;
+			//ItemHelperPlugin.getInstance().getLogger().info("Attempting to open GUI " + type.getName() + " from old GUI type " + (currentGUIType != null ? currentGUIType.getName() : "null") + " for player " + player.getName() + " with items: " + items);
+			if (type != GUIType.LEVEL_CUSTOM)
 			{
-				signGUI = SignGUI.builder().setLines(Utility.getColorEscapedString(Component.text("Level: "), true)).setType(Material.BAMBOO_SIGN).setHandler(ItemListener::onSignChange).build();
+				Inventory gui = type.getGUI(player, type == GUIType.STORED_ITEMS ? hasPersistentGUIData(player) ? getPersistentGUIData(player).getUnretrievedItems() : new ArrayList<>() : items, enchantment, attribute, data, !isPlayerInGUI(player) || getPlayerGUIData(player).isSmallText());
+				Inventory openInventory = player.getOpenInventory().getTopInventory();
+				if (isPlayerInGUI(player) && currentGUIType == type && getPlayerGUIData(player).getGUIPage() > -1 && !(openInventory instanceof PlayerInventory) && !(openInventory instanceof CraftingInventory)) Utility.replaceGUI(openInventory, gui);
+				else player.openInventory(gui);
 			}
-			catch (SignGUIVersionException e)
+			else
 			{
-				ItemHelperPlugin.getInstance().getLogger().warning("An error occurred initializing the sign gui; please report this to the developer!");
-				ItemHelperPlugin.getInstance().getLogger().warning("Full error:");
-				Utility.printException(ItemHelperPlugin.getInstance().getLogger(), e);
-				// TODO fall back to anvil
-				return;
+				SignGUI signGUI;
+				try
+				{
+					signGUI = SignGUI.builder().setLines(Utility.getColorEscapedString(Component.text("Level: "), true)).setType(Material.BAMBOO_SIGN).setHandler(ItemListener::onSignChange).build();
+				}
+				catch (SignGUIVersionException e)
+				{
+					ItemHelperPlugin.getInstance().getLogger().warning("An error occurred initializing the sign gui; please report this to the developer!");
+					ItemHelperPlugin.getInstance().getLogger().warning("Full error:");
+					Utility.printException(ItemHelperPlugin.getInstance().getLogger(), e);
+					// TODO fall back to anvil
+					return;
+				}
+				signGUI.open(player);
 			}
-			signGUI.open(player);
+			if (!PLAYER_GUI_DATA.containsKey(player)) PLAYER_GUI_DATA.put(player, new PlayerGUIData(heldItem.clone(), items, type != GUIType.LEVEL && type != GUIType.LEVEL_CUSTOM ? data : -1, currentGUIType, type, enchantment, attribute, true));
+			else
+			{
+				getPlayerGUIData(player).setCurrentItems(items);
+				getPlayerGUIData(player).setGUIPage(data);
+				getPlayerGUIData(player).setEnchantment(enchantment);
+				getPlayerGUIData(player).setAttribute(attribute);
+				if (type != GUIType.LEVEL_CUSTOM && currentGUIType != type) getPlayerGUIData(player).setParentGUIType(currentGUIType);
+				getPlayerGUIData(player).setGUIType(type);
+				getPlayerGUIData(player).setSmallText(getPlayerGUIData(player).isSmallText());
+			}
 		}
-		if (!PLAYER_GUI_DATA.containsKey(player)) PLAYER_GUI_DATA.put(player, new PlayerGUIData(items, type != GUIType.LEVEL && type != GUIType.LEVEL_CUSTOM ? data : -1, currentGUIType, type, enchantment, attribute, true));
-		else
+		catch (Exception e)
 		{
-			getPlayerGUIData(player).setCurrentItems(items);
-			getPlayerGUIData(player).setGUIPage(data);
-			getPlayerGUIData(player).setEnchantment(enchantment);
-			getPlayerGUIData(player).setAttribute(attribute);
-			if (type != GUIType.LEVEL_CUSTOM) getPlayerGUIData(player).setParentGUIType(currentGUIType);
-			getPlayerGUIData(player).setGUIType(type);
-			getPlayerGUIData(player).setSmallText(getPlayerGUIData(player).isSmallText());
+			ItemHelperPlugin.getInstance().getLogger().severe("An error occurred whilst opening gui:");
+			Utility.printException(ItemHelperPlugin.getInstance().getLogger(), e);
+			clearPlayerGUIData(player);
 		}
 	}
 
@@ -403,8 +444,8 @@ public class ItemListener implements Listener
 		{
 			double finalLevel = level;
 			ArrayList<ItemStack> items = getPlayerGUIData(player).getCurrentItems();
-			if (getPlayerGUIData(player).hasEnchantment()) items.forEach(itemStack -> itemStack.addUnsafeEnchantment(enchantment, (int) finalLevel));
-			if (getPlayerGUIData(player).hasAttribute()) items.forEach(itemStack ->
+			if (enchantment != null) items.forEach(itemStack -> itemStack.addUnsafeEnchantment(enchantment, (int) finalLevel));
+			if (attribute != null) items.forEach(itemStack ->
 			{
 				if (!itemStack.hasItemMeta()) itemStack.setItemMeta(Bukkit.getItemFactory().getItemMeta(itemStack.getType()));
 				itemStack.editMeta(meta -> meta.addAttributeModifier(attribute, new AttributeModifier(attribute.getKey(), finalLevel, AttributeModifier.Operation.ADD_NUMBER)));
@@ -424,6 +465,7 @@ public class ItemListener implements Listener
 	{
 		items.forEach(item ->
 		{
+			if (item == null || item.isEmpty()) return;
 			if (!item.getEnchantments().isEmpty() && !item.hasItemFlag(ItemFlag.HIDE_ENCHANTS)) item.addItemFlags(ItemFlag.HIDE_ENCHANTS);
 			if (item.getEnchantments().isEmpty() && item.hasItemFlag(ItemFlag.HIDE_ENCHANTS)) item.removeItemFlags(ItemFlag.HIDE_ENCHANTS);
 			if (item.hasItemMeta() && item.getItemMeta().hasAttributeModifiers() && item.getItemMeta().hasAttributeModifiers()) item.addItemFlags(ItemFlag.HIDE_ATTRIBUTES, ItemFlag.HIDE_ADDITIONAL_TOOLTIP);
@@ -443,12 +485,11 @@ public class ItemListener implements Listener
 					for (var attributeModifier : meta.getAttributeModifiers().entries())
 					{
 						if (useSmallCaps) lore.add(Component.text(Utility.getSmallCapsString(Utility.getEmoji(attributeModifier.getKey()) + " " + Utility.formatText(attributeModifier.getKey().getKey().getKey()) + ": " + attributeModifier.getValue().getAmount(), true), DefaultTextColor.GREEN).decoration(TextDecoration.ITALIC, false));
-						else lore.add(Component.text(Utility.formatText(attributeModifier.getKey().getKey().getKey()) + " " + attributeModifier.getValue().getAmount(), DefaultTextColor.GREEN).decoration(TextDecoration.ITALIC, false));
+						else lore.add(Component.text(Utility.formatText(attributeModifier.getKey().getKey().getKey()) + ": " + attributeModifier.getValue().getAmount(), DefaultTextColor.GREEN).decoration(TextDecoration.ITALIC, false));
 					}
 				}
 				meta.lore(lore);
 			});
 		});
-
 	}
 }

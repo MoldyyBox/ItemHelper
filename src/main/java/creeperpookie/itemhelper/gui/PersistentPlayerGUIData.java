@@ -1,7 +1,7 @@
 package creeperpookie.itemhelper.gui;
 
-import creeperpookie.itemhelper.util.Utility;
 import org.bukkit.inventory.ItemStack;
+import org.jetbrains.annotations.NotNull;
 
 import java.util.ArrayList;
 
@@ -21,9 +21,9 @@ public class PersistentPlayerGUIData
 		return unretrievedItems;
 	}
 
-	public void addUnretrievedItem(ItemStack itemStack)
+	public void addUnretrievedItem(@NotNull ItemStack itemStack)
 	{
-		if (!Utility.isItemSimilar(unretrievedItems, itemStack)) unretrievedItems.add(itemStack);
+		if (!itemStack.isEmpty()) unretrievedItems.add(itemStack);
 	}
 
 	public void addUnretrievedItems(ArrayList<ItemStack> items)
