@@ -17,8 +17,10 @@ import net.kyori.adventure.text.Component;
 import net.kyori.adventure.text.format.TextDecoration;
 import org.bukkit.Bukkit;
 import org.bukkit.Material;
+import org.bukkit.Tag;
 import org.bukkit.attribute.Attribute;
 import org.bukkit.attribute.AttributeModifier;
+import org.bukkit.block.ShulkerBox;
 import org.bukkit.enchantments.Enchantment;
 import org.bukkit.entity.Player;
 import org.bukkit.event.EventHandler;
@@ -32,11 +34,14 @@ import org.bukkit.inventory.ItemFlag;
 import org.bukkit.inventory.ItemStack;
 import org.bukkit.inventory.PlayerInventory;
 import org.bukkit.inventory.meta.BlockDataMeta;
+import org.bukkit.inventory.meta.BlockStateMeta;
 import org.jetbrains.annotations.NotNull;
+import org.jetbrains.annotations.Nullable;
 
 import java.util.ArrayList;
 import java.util.HashMap;
 import java.util.List;
+import java.util.concurrent.atomic.AtomicInteger;
 
 public class ItemListener implements Listener
 {
@@ -54,6 +59,7 @@ public class ItemListener implements Listener
 			if (!isPlayerInGUI(player) || inventory == null || inventory instanceof PlayerInventory || inventory instanceof CraftingInventory || item == null || !CustomItem.isCustomItem(item)) return;
 			GUIType guiType = getPlayerGUIData(player).getGUIType();
 			if (guiType != GUIType.SELECTED_ITEMS || CustomItem.isCustomItem(item)) event.setCancelled(true);
+			int clickedSlot = event.getSlot();
 			ArrayList<ItemStack> savedItems = getPlayerGUIData(player).getCurrentItems();
 			Enchantment savedEnchantment = getPlayerGUIData(player).getEnchantment();
 			Attribute savedAttribute = getPlayerGUIData(player).getAttribute();
@@ -66,7 +72,7 @@ public class ItemListener implements Listener
 					Utility.sendError(player, "You are already on the last page!");
 					return;
 				}
-				if (guiType == GUIType.SELECTED_ITEMS || guiType == GUIType.STORED_ITEMS) recheckGUIItems(inventory, guiType == GUIType.SELECTED_ITEMS ? savedItems : hasPersistentGUIData(player) ? getPersistentGUIData(player).getUnretrievedItems() : List.of(), page, guiType == GUIType.SELECTED_ITEMS ? 1 : 0, 52, guiType == GUIType.SELECTED_ITEMS);
+				if (guiType == GUIType.SELECTED_ITEMS || guiType == GUIType.STORED_ITEMS) recheckGUIItems(inventory, guiType == GUIType.SELECTED_ITEMS ? savedItems : hasPersistentGUIData(player) ? getPersistentGUIData(player).getUnretrievedItems() : List.of(), page, 1, 52, guiType == GUIType.SELECTED_ITEMS);
 				//ItemHelperPlugin.getInstance().getLogger().info("Clicked next page button, player: " + player.getName() + " current page: " + page);
 				openGUI(player, guiType, savedEnchantment, savedAttribute, page + 1);
 			}
@@ -78,7 +84,7 @@ public class ItemListener implements Listener
 					Utility.sendError(player, "You are already on the first page!");
 					return;
 				}
-				if (guiType == GUIType.SELECTED_ITEMS || guiType == GUIType.STORED_ITEMS) recheckGUIItems(inventory, guiType == GUIType.SELECTED_ITEMS ? savedItems : hasPersistentGUIData(player) ? getPersistentGUIData(player).getUnretrievedItems() : List.of(), page, guiType == GUIType.SELECTED_ITEMS ? 1 : 0, 52, guiType == GUIType.SELECTED_ITEMS);
+				if (guiType == GUIType.SELECTED_ITEMS || guiType == GUIType.STORED_ITEMS) recheckGUIItems(inventory, guiType == GUIType.SELECTED_ITEMS ? savedItems : hasPersistentGUIData(player) ? getPersistentGUIData(player).getUnretrievedItems() : List.of(), page, 1, 52, guiType == GUIType.SELECTED_ITEMS);
 				//ItemHelperPlugin.getInstance().getLogger().info("Clicked previous page button, player: " + player.getName() + " current page: " + page);
 				openGUI(player, guiType, savedEnchantment, savedAttribute, page - 1);
 			}
@@ -161,24 +167,44 @@ public class ItemListener implements Listener
 					//ItemHelperPlugin.getInstance().getLogger().warning("Clicked the remove value item, but no enchantment or attribute was set!"); // should never happen
 					return;
 				}
-				int isRemoved = 0;
+				AtomicInteger isRemoved = new AtomicInteger();
 				for (ItemStack savedItem : savedItems)
 				{
 					if (savedItem == null || savedItem.isEmpty()) continue;
+					else if (Tag.SHULKER_BOXES.isTagged(savedItem.getType()))
+					{
+						savedItem.editMeta(BlockStateMeta.class, meta ->
+						{
+							ShulkerBox blockState = (ShulkerBox) meta.getBlockState();
+							blockState.getInventory().forEach(itemStack ->
+							{
+								if (savedEnchantment != null && savedItem.containsEnchantment(savedEnchantment))
+								{
+									isRemoved.updateAndGet(v -> v | 1);
+									savedItem.removeEnchantment(savedEnchantment);
+								}
+								if (savedAttribute != null && meta.hasAttributeModifiers())
+								{
+									isRemoved.updateAndGet(v -> v | 2);
+									meta.removeAttributeModifier(savedAttribute);
+								}
+							});
+						});
+					}
 					if (savedEnchantment != null && savedItem.containsEnchantment(savedEnchantment))
 					{
-						isRemoved |= 1;
+						isRemoved.updateAndGet(v -> v | 1);
 						savedItem.removeEnchantment(savedEnchantment);
 					}
 					if (savedAttribute != null && savedItem.hasItemMeta() && savedItem.getItemMeta().hasAttributeModifiers())
 					{
-						isRemoved |= 2;
+						isRemoved.updateAndGet(v -> v | 2);
 						savedItem.editMeta(meta -> meta.removeAttributeModifier(savedAttribute));
 					}
 				}
 				updateLore(savedItems, getPlayerGUIData(player).isSmallText());
-				if (isRemoved != 0 && (isRemoved & 1) == 0 && savedEnchantment != null) Utility.sendError(player, "The held item does not have the " + savedEnchantment.getKey().getKey() + " enchantment!"); // also should never happen, can only be clicked if the item has the enchantment
-				else if (isRemoved != 0 && (isRemoved & 2) == 0 && savedAttribute != null) Utility.sendError(player, "The held item does not have the " + savedAttribute.getKey().getKey() + " attribute!"); // also should never happen, can only be clicked if the item has the attribute
+				if (isRemoved.get() != 0 && (isRemoved.get() & 1) == 0 && savedEnchantment != null) Utility.sendError(player, "The held item does not have the " + savedEnchantment.getKey().getKey() + " enchantment!"); // also should never happen, can only be clicked if the item has the enchantment
+				else if (isRemoved.get() != 0 && (isRemoved.get() & 2) == 0 && savedAttribute != null) Utility.sendError(player, "The held item does not have the " + savedAttribute.getKey().getKey() + " attribute!"); // also should never happen, can only be clicked if the item has the attribute
 				//ItemHelperPlugin.getInstance().getLogger().info("Clicked remove enchantment/attribute button, player: " + player.getName() + ", closing inventory and opening parent gui type: " + getPlayerGUIData(player).getParentGUIType().getName());
 				player.closeInventory(InventoryCloseEvent.Reason.OPEN_NEW);
 				Bukkit.getScheduler().runTask(ItemHelperPlugin.getInstance(), () -> openGUI(player, getPlayerGUIData(player).getParentGUIType(), savedEnchantment, savedAttribute));
@@ -310,7 +336,7 @@ public class ItemListener implements Listener
 			}
 			else if (getPlayerGUIData(player).getGUIType() == GUIType.STORED_ITEMS && event.getReason() != InventoryCloseEvent.Reason.OPEN_NEW && event.getReason() != InventoryCloseEvent.Reason.PLUGIN)
 			{
-				recheckGUIItems(inventory, getPersistentGUIData(player).getUnretrievedItems(), getPlayerGUIData(player).getGUIPage(), 0, 52, false);
+				recheckGUIItems(inventory, getPersistentGUIData(player).getUnretrievedItems(), getPlayerGUIData(player).getGUIPage(), 1, 52, false);
 			}
 			else if (getPlayerGUIData(player).getGUIType() == GUIType.SELECTED_ITEMS && event.getReason() != InventoryCloseEvent.Reason.OPEN_NEW && event.getReason() != InventoryCloseEvent.Reason.PLUGIN)
 			{

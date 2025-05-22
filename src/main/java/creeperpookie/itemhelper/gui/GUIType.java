@@ -76,14 +76,16 @@ public enum GUIType
 			case STORED_ITEMS ->
 			{
 				if (page > getMaxPage()) throw new IllegalArgumentException("Tried to get an " + getName() + " GUI for an invalid page number " + page + " from player " + player.getName());
-				int startIndex = (52 * page);
+				int takenSlots = 3;
 				Inventory gui = Bukkit.createInventory(null, 54, getTitle());
-				for (int index = 0, itemIndex = startIndex; itemIndex < items.size(); index++, itemIndex++)
+				int startIndex = ((gui.getSize() - takenSlots) * page);
+				for (int index = 1, itemIndex = startIndex; itemIndex < items.size(); index++, itemIndex++)
 				{
 					ItemStack item = items.get(itemIndex);
 					gui.setItem(index, item == null ? ItemStack.empty() : item.clone());
 					if (index >= gui.getSize() - 2) break;
 				}
+				gui.setItem(0, ItemType.BUNDLE_ITEMS.getItemStack());
 				gui.setItem(gui.getSize() - 2, ItemType.PREVIOUS_PAGE.getItemStack());
 				gui.setItem(gui.getSize() - 1, ItemType.NEXT_PAGE.getItemStack());
 				yield gui;

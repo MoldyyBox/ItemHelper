@@ -19,6 +19,7 @@ public enum ItemType
 	PREVIOUS_HISTORY(PreviousHistoryItem.class),
 	PREVIOUS_HISTORY_ENTRY(PreviousHistoryEntryItem.class),
 	CURRENT_ITEMS(CurrentItemsItem.class),
+	BUNDLE_ITEMS(BundleItemsItem.class),
 	BACK_BUTTON(BackButtonItem.class),
 	NEXT_PAGE(NextPageItem.class),
 	PREVIOUS_PAGE(PreviousPageItem.class),

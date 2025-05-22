@@ -12,6 +12,7 @@ public class ItemConstants
 	public static final int PREVIOUS_HISTORY_MODEL_DATA = 400817584;
 	public static final int PREVIOUS_HISTORY_ENTRY_MODEL_DATA = 977731624;
 	public static final int CURRENT_ITEMS_MODEL_DATA = 1525903535;
+	public static final int BUNDLE_ITEMS_MODEL_DATA = 672452040;
 	public static final int BACK_BUTTON_MODEL_DATA = 1200966800;
 	public static final int NEXT_PAGE_MODEL_DATA = 504748374;
 	public static final int PREVIOUS_PAGE_MODEL_DATA = 1136400731;
