@@ -15,9 +15,17 @@ buildscript
 
 plugins {
     id 'java'
+    id 'idea'
     id "xyz.jpenilla.run-paper" version "2.3.1"
     id "com.gradleup.shadow" version "8.3.0"
     id "io.papermc.paperweight.userdev" version "2.0.0-beta.16"
+}
+
+idea {
+    module {
+        downloadJavadoc = true
+        downloadSources = true
+    }
 }
 
 repositories {
@@ -33,9 +41,10 @@ repositories {
 }
 
 dependencies {
-    compileOnly("io.papermc.paper:paper-api:1.21.4-R0.1-SNAPSHOT")
-    paperweight.paperDevBundle("1.21.4-R0.1-SNAPSHOT")
-    implementation("de.rapha149.signgui:signgui:2.5.0")
+    compileOnly "io.papermc.paper:paper-api:${minecraft_version}-R0.1-SNAPSHOT"
+    paperweight.paperDevBundle "${minecraft_version}-R0.1-SNAPSHOT"
+    implementation "de.rapha149.signgui:signgui:2.5.0"
+    implementation "net.wesjd:anvilgui:2.0.3-SNAPSHOT"
 }
 
 paperweight
@@ -52,12 +61,12 @@ tasks {
         [
             "-Xms2G",
             "-Xms4G",
-            "-XX:+AllowEnhancedClassRedefinition",
+            "-XX:+AllowEnhancedClassRedefinition", // Comment out if not using JetBrains Runtime for project JDK!
             "-XX:+UnlockExperimentalVMOptions",
             "-XX:+UseStringDeduplication"
         ]
         args = ["nogui"]
-        minecraftVersion("1.21.4")
+        minecraftVersion minecraft_version
     }
     build
     {
@@ -98,7 +107,7 @@ tasks.withType(JavaCompile).configureEach {
 processResources {
     def props = [name: project.name, version: version, plugin_id: plugin_id]
     inputs.properties props
-    filteringCharset 'UTF-8'
+    filteringCharset = 'UTF-8'
     filesMatching('plugin.yml') {
         expand props
     }
