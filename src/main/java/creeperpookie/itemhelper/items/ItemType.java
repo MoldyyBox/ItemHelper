@@ -8,6 +8,8 @@ import creeperpookie.itemhelper.items.gui.enchantments.curses.CurseOfVanishingIt
 import creeperpookie.itemhelper.items.gui.levels.BasicEnchantmentLevelItem;
 import creeperpookie.itemhelper.items.gui.levels.CustomEnchantmentLevelItem;
 import creeperpookie.itemhelper.items.gui.levels.RemoveValueItem;
+import org.bukkit.inventory.ItemStack;
+import org.jetbrains.annotations.NotNull;
 
 public enum ItemType
 {
@@ -115,8 +117,20 @@ public enum ItemType
 		return itemClass;
 	}
 
-	public CustomItem getItem()
+	public CustomItem getCustomItem()
 	{
 		return CustomItem.getItem(this);
+	}
+
+	@NotNull
+	public ItemStack getItemStack()
+	{
+		return getCustomItem().getItemStack();
+	}
+
+	@NotNull
+	public ItemStack getItemStack(int data)
+	{
+		return getCustomItem().getItemStack(data);
 	}
 }

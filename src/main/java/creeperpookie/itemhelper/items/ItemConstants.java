@@ -7,7 +7,7 @@ public class ItemConstants
 
 	// Item model data
 	// GUI buttons
-	public static final int EMPTY_SLOT_MODEL_DATA = 1700853284;
+	public static final int REPLACEMENT_SLOT_MODEL_DATA = 1700853284;
 	public static final int BLANK_SLOT_MODEL_DATA = 281855331;
 	public static final int CURRENT_ITEMS_MODEL_DATA = 1525903535;
 	public static final int BACK_BUTTON_MODEL_DATA = 1200966800;
@@ -23,12 +23,12 @@ public class ItemConstants
 	// Enchantments
 	public static final int AQUA_AFFINITY_MODEL_DATA = 1601614377;
 	public static final int BANE_OF_ARTHROPODS_MODEL_DATA = 1763339142;
-	public static final int BLAST_PROTECTION_MODEL_DATA = 2099611845;
+	public static final int BLAST_PROTECTION_MODEL_DATA = 1214596883;
 	public static final int BREACH_MODEL_DATA = 1289165042;
 	public static final int CHANNELING_MODEL_DATA = 1866241750;
 	public static final int CURSE_OF_BINDING_MODEL_DATA = 702232973;
 	public static final int CURSE_OF_VANISHING_MODEL_DATA = 408394103;
-	public static final int DENSITY_MODEL_DATA = 1052668051;
+	public static final int DENSITY_MODEL_DATA = 327306480;
 	public static final int DEPTH_STRIDER_MODEL_DATA = 1577184477;
 	public static final int EFFICIENCY_MODEL_DATA = 867744919;
 	public static final int FEATHER_FALLING_MODEL_DATA = 739060851;

@@ -33,12 +33,12 @@ public class ReplacementSlotItem implements CustomItem
 	@NotNull
 	public String getName()
 	{
-		return "empty_slot";
+		return "replacement_slot";
 	}
 
 	@Override
 	public int getModelData()
 	{
-		return ItemConstants.EMPTY_SLOT_MODEL_DATA;
+		return ItemConstants.REPLACEMENT_SLOT_MODEL_DATA;
 	}
 }

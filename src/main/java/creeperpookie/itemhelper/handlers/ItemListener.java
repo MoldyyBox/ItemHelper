@@ -33,7 +33,6 @@ import org.bukkit.inventory.PlayerInventory;
 import org.bukkit.inventory.meta.BlockDataMeta;
 import org.jetbrains.annotations.NotNull;
 
-import javax.annotation.Nullable;
 import java.util.ArrayList;
 import java.util.HashMap;
 import java.util.List;
@@ -51,7 +50,7 @@ public class ItemListener implements Listener
 		{
 			Inventory inventory = event.getClickedInventory();
 			ItemStack item = event.getCurrentItem();
-			if (!isPlayerInGUI(player) || inventory == null || inventory instanceof PlayerInventory || item == null || !CustomItem.isCustomItem(item)) return;
+			if (!isPlayerInGUI(player) || inventory == null || inventory instanceof PlayerInventory || inventory instanceof CraftingInventory || item == null || !CustomItem.isCustomItem(item)) return;
 			GUIType guiType = getPlayerGUIData(player).getGUIType();
 			if (guiType != GUIType.SELECTED_ITEMS || CustomItem.isCustomItem(item)) event.setCancelled(true);
 			ArrayList<ItemStack> savedItems = getPlayerGUIData(player).getCurrentItems();
@@ -211,13 +210,10 @@ public class ItemListener implements Listener
 				if (Utility.getEmptySlotCount(player.getInventory()) < items.size())
 				{
 					Utility.sendError(player, "You do not have enough space in your inventory to retrieve your items!\nYou can retrieve your items again with the /ih items command.");
-					if (!hasPersistentGUIData(player)) PERSISTENT_PLAYER_GUI_DATA.put(player, new PersistentPlayerGUIData());
 					getPersistentGUIData(player).addUnretrievedItems(items);
 				}
-				else
-				{
-					items.forEach(item -> player.getInventory().setItem(player.getInventory().firstEmpty(), item.clone()));
-				}
+				else items.forEach(item -> player.getInventory().setItem(player.getInventory().firstEmpty(), item.clone()));
+				getPersistentGUIData(player).save();
 				int dataTypesSet = 0;
 				int enchantments = 0;
 				int attributes = 0;
@@ -368,11 +364,11 @@ public class ItemListener implements Listener
 				{
 					signGUI = SignGUI.builder().setLines(Utility.getColorEscapedString(Component.text("Level: "), true)).setType(Material.BAMBOO_SIGN).setHandler(ItemListener::onSignChange).build();
 				}
-				catch (SignGUIVersionException e)
+				catch (SignGUIVersionException signGuiException)
 				{
 					ItemHelperPlugin.getInstance().getLogger().warning("An error occurred initializing the sign gui; please report this to the developer!");
 					ItemHelperPlugin.getInstance().getLogger().warning("Full error:");
-					Utility.printException(ItemHelperPlugin.getInstance().getLogger(), e);
+					Utility.printException(ItemHelperPlugin.getInstance().getLogger(), signGuiException);
 					// TODO fall back to anvil
 					return;
 				}

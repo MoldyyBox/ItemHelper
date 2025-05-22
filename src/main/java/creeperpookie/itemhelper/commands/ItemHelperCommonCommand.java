@@ -47,7 +47,7 @@ public class ItemHelperCommonCommand implements CommandExecutor, TabCompleter
 			{
 				if (ItemListener.isPlayerInGUI(player)) ItemListener.clearPlayerGUIData(player);
 				// TODO make base GUI for all item types
-				//ItemListener.openGUI(player, GUIType.ATTRIBUTE, null, null);
+				// ItemListener.openGUI(player, GUIType.ATTRIBUTE, null, null);
 				return true;
 			}
 			case 1 ->

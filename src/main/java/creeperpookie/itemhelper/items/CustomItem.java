@@ -17,11 +17,6 @@ public interface CustomItem
 {
 	HashMap<Class<? extends CustomItem>, CustomItem> registeredItems = new HashMap<>();
 
-	static boolean isCustomItem(@NotNull CustomItem customItem, @NotNull ItemType itemType)
-	{
-		return customItem.equals(getItem(itemType));
-	}
-
 	default boolean isItem(ItemStack item)
 	{
 		if (item == null) return false;
@@ -70,7 +65,6 @@ public interface CustomItem
 
 	default boolean isItemType(@NotNull ItemType type)
 	{
-		if (getItem(type) == null) return false;
 		return getItem(type).isItem(this.getItemStack());
 	}
 
@@ -79,27 +73,25 @@ public interface CustomItem
 		return getItemStack().isSimilar(item.getItemStack()) && getName().equalsIgnoreCase(item.getName()) && getModelData() == item.getModelData() && hasLinkedEnchantment() == item.hasLinkedEnchantment() && getLinkedEnchantment() == item.getLinkedEnchantment();
 	}
 	
-	static boolean isCustomItem(ItemStack item)
+	static boolean isCustomItem(@NotNull ItemStack item)
 	{
 		return registeredItems.values().stream().anyMatch(customItem -> customItem.isItem(item));
 	}
 
-	static boolean isCustomItem(ItemStack item, ItemType type)
+	static boolean isCustomItem(@NotNull ItemStack item, ItemType type)
 	{
-		CustomItem customItem = getItem(type);
-		if (item == null || customItem == null) return false;
-		return customItem.isItemType(type);
+		return getItem(type).isItem(item);
 		//return item.isSimilar(customItem.getItemStack());
 	}
 	
 	static boolean isCustomItem(ItemStack item, Class<? extends CustomItem> $class)
 	{
-		return registeredItems.get($class).getItemStack().isSimilar(item);
+		return registeredItems.get($class).isItem(item);
 	}
 	
 	static boolean isCustomItem(ItemStack item, String customItemName)
 	{
-		return getItem(customItemName) != null && getItem(customItemName).getItemStack().isSimilar(item);
+		return getItem(customItemName) != null && getItem(customItemName).isItem(item);
 	}
 	
 	static boolean isCustomItem(String customItemName)
@@ -110,6 +102,11 @@ public interface CustomItem
 	static boolean isCustomItem(String customItemName, ItemType type)
 	{
 		return isCustomItem(customItemName) && getItem(customItemName).isItemType(type);
+	}
+
+	static boolean isCustomItem(@NotNull CustomItem customItem, @NotNull ItemType itemType)
+	{
+		return customItem.isItemType(itemType);
 	}
 
 	static boolean hasCustomItem(Inventory inventory)
@@ -250,10 +247,10 @@ public interface CustomItem
 		*/
 	}
 
-	private static void registerItem(CustomItem customItem)
+	static void registerItem(CustomItem customItem)
 	{
 		if (registeredItems.containsKey(customItem.getClass())) return;
+		else if (isCustomItem(customItem.getName())) throw new IllegalArgumentException("Custom item implementation name ids must be unique: " + customItem.getName() + " in " + customItem.getClass().getName());
 		registeredItems.put(customItem.getClass(), customItem);
 	}
-
 }
