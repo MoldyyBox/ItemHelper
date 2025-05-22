@@ -2,6 +2,7 @@ package creeperpookie.itemhelper.handlers;
 
 import creeperpookie.itemhelper.ItemHelperPlugin;
 import creeperpookie.itemhelper.gui.GUIType;
+import creeperpookie.itemhelper.gui.LastSuccessfulAction;
 import creeperpookie.itemhelper.gui.PersistentPlayerGUIData;
 import creeperpookie.itemhelper.gui.PlayerGUIData;
 import creeperpookie.itemhelper.items.CustomItem;
@@ -88,7 +89,58 @@ public class ItemListener implements Listener
 				player.closeInventory(getPlayerGUIData(player).hasItems() ? InventoryCloseEvent.Reason.OPEN_NEW : InventoryCloseEvent.Reason.PLAYER);
 				if (isPlayerInGUI(player)) Bukkit.getScheduler().runTask(ItemHelperPlugin.getInstance(), () -> openGUI(player, getPlayerGUIData(player).getParentGUIType(), savedEnchantment, savedAttribute));
 			}
-			//else if (Utility.isItemSimilar(savedItems, item) && getPlayerGUIData(player).getGUIType() == GUIType.ENCHANTING) player.closeInventory(InventoryCloseEvent.Reason.PLAYER);
+			else if (customItem.isItemType(ItemType.PREVIOUS_HISTORY))
+			{
+				player.closeInventory(InventoryCloseEvent.Reason.OPEN_NEW);
+				Bukkit.getScheduler().runTask(ItemHelperPlugin.getInstance(), () -> openGUI(player, GUIType.PREVIOUS_ITEMS, savedEnchantment, savedAttribute));
+			}
+			else if (customItem.isItemType(ItemType.PREVIOUS_HISTORY_ENTRY))
+			{
+				LastSuccessfulAction action = getPersistentGUIData(player).getLastSuccessfulActions().get(Math.abs(9 - getPersistentGUIData(player).getLastSuccessfulActions().size() - clickedSlot)); // TODO add support for > 9 history entries
+				savedItems.forEach(savedItem ->
+				{
+					savedItem.editMeta(meta -> action.getAttributes().forEach(attribute ->
+					{
+						if (meta.hasAttributeModifiers() && meta.getAttributeModifiers(attribute.getLeft()) != null) meta.removeAttributeModifier(attribute.getLeft());
+						meta.addAttributeModifier(attribute.getLeft(), new AttributeModifier(attribute.getLeft().getKey(), attribute.getRight(), AttributeModifier.Operation.ADD_NUMBER));
+					}));
+					action.getEnchantments().forEach(enchantment ->
+					{
+						if (savedItem.getEnchantmentLevel(enchantment.getLeft()) != 0) savedItem.removeEnchantment(enchantment.getLeft());
+						savedItem.addUnsafeEnchantment(enchantment.getLeft(), enchantment.getRight());
+					});
+				});
+				updateLore(savedItems, action.isSmallText());
+				player.closeInventory(InventoryCloseEvent.Reason.OPEN_NEW);
+				Bukkit.getScheduler().runTask(ItemHelperPlugin.getInstance(), () -> openGUI(player, getPlayerGUIData(player).getParentGUIType(), savedEnchantment, savedAttribute));
+			}
+			else if (customItem.isItemType(ItemType.BUNDLE_ITEMS))
+			{
+				recheckGUIItems(inventory, savedItems, getPlayerGUIData(player).getGUIPage(), 1, 52, true);
+				if (player.getInventory().firstEmpty() == -1) Utility.sendError(player, "You do not have any free slots!");
+				else if (!hasPersistentGUIData(player) || getPersistentGUIData(player).getUnretrievedItems().isEmpty()) Utility.sendError(player, "You have saved items to bundle!");
+				else
+				{
+					ArrayList<ItemStack> bundledItems = new ArrayList<>();
+					for (int index = 0; index < Math.min(getPersistentGUIData(player).getUnretrievedItems().size(), 27); index++)
+					{
+						bundledItems.add(getPersistentGUIData(player).getUnretrievedItems().get(index));
+						inventory.clear(index);
+					}
+					ItemStack shulker = new ItemStack(Material.PURPLE_SHULKER_BOX);
+					shulker.editMeta(BlockStateMeta.class, meta ->
+					{
+						meta.displayName(Component.text("Exported Items", DefaultTextColor.BLUE).decoration(TextDecoration.ITALIC, false).decorate(TextDecoration.BOLD));
+						ShulkerBox blockState = (ShulkerBox) meta.getBlockState();
+						bundledItems.forEach(blockState.getInventory()::addItem);
+						meta.setBlockState(blockState);
+					});
+					player.getInventory().setItem(player.getInventory().firstEmpty(), shulker);
+					recheckGUIItems(inventory, getPersistentGUIData(player).getUnretrievedItems(), getPlayerGUIData(player).getGUIPage(), 1, 52, true);
+					player.closeInventory(InventoryCloseEvent.Reason.OPEN_NEW);
+					Bukkit.getScheduler().runTask(ItemHelperPlugin.getInstance(), () -> openGUI(player, guiType, savedEnchantment, savedAttribute));
+				}
+			}
 			else if (customItem.isItemType(ItemType.SMALL_TEXT_TOGGLE))
 			{
 				getPlayerGUIData(player).setSmallText(!getPlayerGUIData(player).isSmallText());
@@ -206,6 +258,8 @@ public class ItemListener implements Listener
 					player.sendActionBar(Component.text("No changes were applied to your", DefaultTextColor.GOLD).appendSpace().append(items.getFirst().effectiveName().color(DefaultTextColor.AQUA).decoration(TextDecoration.ITALIC, false)));
 					return;
 				}
+				if (!hasPersistentGUIData(player)) PERSISTENT_PLAYER_GUI_DATA.put(player, new PersistentPlayerGUIData(player.getUniqueId()));
+				getPersistentGUIData(player).addLastSuccessfulAction(LastSuccessfulAction.getFromItem(items.getFirst(), getPlayerGUIData(player).isSmallText()), 9);
 				GUIType guiType = getPlayerGUIData(player).getGUIType();
 				if (Utility.getEmptySlotCount(player.getInventory()) < items.size())
 				{
@@ -345,6 +399,11 @@ public class ItemListener implements Listener
 	{
 		try
 		{
+			if (!isPlayerInGUI(player))
+			{
+				if (!hasPersistentGUIData(player)) PERSISTENT_PLAYER_GUI_DATA.put(player, new PersistentPlayerGUIData(player.getUniqueId()));
+				getPersistentGUIData(player).load();
+			}
 			ItemStack heldItem = player.getInventory().getItemInMainHand().isEmpty() ? player.getInventory().getItemInOffHand().isEmpty() ? ItemStack.empty() : player.getInventory().getItemInOffHand().clone() : player.getInventory().getItemInMainHand().clone();
 			ArrayList<ItemStack> items = isPlayerInGUI(player) && getPlayerGUIData(player).hasItems() ? getPlayerGUIData(player).getCurrentItems() : new ArrayList<>(List.of(heldItem));
 			if ((type == GUIType.ENCHANTING || type == GUIType.ATTRIBUTE) && (data < 0 || data > type.getMaxPage())) return; // data is GUI page

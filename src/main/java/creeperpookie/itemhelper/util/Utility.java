@@ -831,4 +831,26 @@ public class Utility
 		for (ItemStack item : inventory) if (item == null || item.isEmpty()) count++;
 		return count;
 	}
+
+	/**
+	 * Checks if a float is effectively an integer (i.e. 5.0).
+	 *
+	 * @param number the double to check
+	 * @return true if the number is effectively an integer
+	 */
+	public static boolean isInteger(float number)
+	{
+		return Math.floor(number) == number;
+	}
+
+	/**
+	 * Checks if a double is effectively an integer (i.e. 5.0).
+	 *
+	 * @param number the double to check
+	 * @return true if the number is effectively an integer
+	 */
+	public static boolean isInteger(double number)
+	{
+		return Math.floor(number) == number;
+	}
 }

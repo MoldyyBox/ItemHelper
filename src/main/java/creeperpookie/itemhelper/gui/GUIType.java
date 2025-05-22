@@ -1,6 +1,6 @@
 package creeperpookie.itemhelper.gui;
 
-import creeperpookie.itemhelper.items.CustomItem;
+import creeperpookie.itemhelper.handlers.ItemListener;
 import creeperpookie.itemhelper.items.ItemType;
 import creeperpookie.itemhelper.items.gui.PreviousHistoryEntryItem;
 import creeperpookie.itemhelper.util.DefaultTextColor;
@@ -20,6 +20,7 @@ import java.util.ArrayList;
 
 public enum GUIType
 {
+	PREVIOUS_ITEMS,
 	STORED_ITEMS,
 	SELECTED_ITEMS,
 	ENCHANTING,
@@ -27,11 +28,13 @@ public enum GUIType
 	LEVEL,
 	LEVEL_CUSTOM;
 
+	private static final Component PREVIOUS_ITEMS_GUI_TITLE = Component.text("Previous Items", DefaultTextColor.AQUA).decoration(TextDecoration.ITALIC, false);
 	private static final Component STORED_ITEMS_GUI_TITLE = Component.text("Stored Items", DefaultTextColor.AQUA).decoration(TextDecoration.ITALIC, false);
 	private static final Component SELECTED_ITEMS_GUI_TITLE = Component.text("Selected Items", DefaultTextColor.AQUA).decoration(TextDecoration.ITALIC, false);
 	private static final Component ENCHANTING_GUI_TITLE = Component.text("Enchantments", DefaultTextColor.AQUA).decoration(TextDecoration.ITALIC, false);
 	private static final Component ATTRIBUTE_GUI_TITLE = Component.text("Attributes", DefaultTextColor.BLUE).decoration(TextDecoration.ITALIC, false);
 	private static final Component LEVEL_GUI_TITLE = Component.text("Enchantment Level", DefaultTextColor.BLUE).decoration(TextDecoration.ITALIC, false);
+	private static final Inventory PREVIOUS_ITEMS_GUI = Bukkit.createInventory(null, 27, ENCHANTING_GUI_TITLE);
 	private static final Inventory ENCHANTING_GUI_1 = Bukkit.createInventory(null, 54, ENCHANTING_GUI_TITLE);
 	private static final Inventory ENCHANTING_GUI_2 = Bukkit.createInventory(null, 54, ENCHANTING_GUI_TITLE);
 	private static final Inventory ATTRIBUTE_GUI_1 = Bukkit.createInventory(null, 54, ATTRIBUTE_GUI_TITLE);
@@ -62,6 +65,14 @@ public enum GUIType
 		else if (page < 0) throw new IllegalArgumentException("Tried to get an " + getName() + " GUI for an invalid page number " + page + " from player " + player.getName());
 		else return Utility.copyInventory(switch (this)
 		{
+			case PREVIOUS_ITEMS -> 
+			{
+				Inventory gui = Utility.copyInventory(PREVIOUS_ITEMS_GUI, getTitle());
+				var lastSuccessfulActions = ItemListener.hasPersistentGUIData(player) ? ItemListener.getPersistentGUIData(player).getLastSuccessfulActions() : new ArrayList<LastSuccessfulAction>();
+				if (lastSuccessfulActions.size() < 9) for (int slot = 0; slot < 9 - lastSuccessfulActions.size(); slot++) gui.setItem(slot, ItemType.EMPTY_SLOT.getItemStack());
+				if (!lastSuccessfulActions.isEmpty()) for (int slot = 9 - lastSuccessfulActions.size(); slot < 9; slot++) gui.setItem(slot, ((PreviousHistoryEntryItem) ItemType.PREVIOUS_HISTORY_ENTRY.getCustomItem()).updateLore(lastSuccessfulActions.get(Math.abs((9 - lastSuccessfulActions.size()) - slot))));
+				yield gui;
+			}
 			case STORED_ITEMS ->
 			{
 				if (page > getMaxPage()) throw new IllegalArgumentException("Tried to get an " + getName() + " GUI for an invalid page number " + page + " from player " + player.getName());
@@ -119,6 +130,7 @@ public enum GUIType
 	{
 		return switch (this)
 		{
+			case PREVIOUS_ITEMS -> PREVIOUS_ITEMS_GUI_TITLE;
 			case STORED_ITEMS -> STORED_ITEMS_GUI_TITLE;
 			case SELECTED_ITEMS -> SELECTED_ITEMS_GUI_TITLE;
 			case ENCHANTING -> ENCHANTING_GUI_TITLE;
@@ -133,36 +145,39 @@ public enum GUIType
 		return switch (this)
 		{
 			case STORED_ITEMS, SELECTED_ITEMS -> Integer.MAX_VALUE;
-			case LEVEL, LEVEL_CUSTOM -> 1;
+			case PREVIOUS_ITEMS, LEVEL, LEVEL_CUSTOM -> 1;
 			case ENCHANTING, ATTRIBUTE -> 2;
 		};
 	}
 
 	public static void registerItems()
 	{
+		PREVIOUS_ITEMS_GUI.clear();
 		ENCHANTING_GUI_1.clear();
 		ENCHANTING_GUI_2.clear();
 		ATTRIBUTE_GUI_1.clear();
 		ATTRIBUTE_GUI_2.clear();
 		LEVEL_GUI.clear();
+		
+		// Set up the previous history GUI
+		// Slots 0-8 are for the actual history
+		for (int slot = 9; slot < PREVIOUS_ITEMS_GUI.getSize(); slot++)
+		{
+			if (slot == PREVIOUS_ITEMS_GUI.getSize() - 9) continue;
+			PREVIOUS_ITEMS_GUI.setItem(slot, ItemType.BLANK_SLOT.getItemStack());
+		}
+		PREVIOUS_ITEMS_GUI.setItem(PREVIOUS_ITEMS_GUI.getSize() - 9, ItemType.BACK_BUTTON.getItemStack());
 
 		// Set up the enchanting and attribute GUIs
 		for (int slot = 0; slot < 13; slot++)
 		{
-			ENCHANTING_GUI_1.setItem(slot, CustomItem.getItem(ItemType.BLANK_SLOT).getItemStack());
-			ENCHANTING_GUI_2.setItem(slot, CustomItem.getItem(ItemType.BLANK_SLOT).getItemStack());
-			ATTRIBUTE_GUI_1.setItem(slot, CustomItem.getItem(ItemType.BLANK_SLOT).getItemStack());
-			ATTRIBUTE_GUI_2.setItem(slot, CustomItem.getItem(ItemType.BLANK_SLOT).getItemStack());
+			if (slot == 11) continue;
 			ENCHANTING_GUI_1.setItem(slot, ItemType.BLANK_SLOT.getItemStack());
 			ENCHANTING_GUI_2.setItem(slot, ItemType.BLANK_SLOT.getItemStack());
 			ATTRIBUTE_GUI_1.setItem(slot, ItemType.BLANK_SLOT.getItemStack());
 			ATTRIBUTE_GUI_2.setItem(slot, ItemType.BLANK_SLOT.getItemStack());
 		}
-		// Slot index 13 is the held item
-		ENCHANTING_GUI_1.setItem(14, CustomItem.getItem(ItemType.BLANK_SLOT).getItemStack());
-		ENCHANTING_GUI_2.setItem(14, CustomItem.getItem(ItemType.BLANK_SLOT).getItemStack());
-		ATTRIBUTE_GUI_1.setItem(14, CustomItem.getItem(ItemType.BLANK_SLOT).getItemStack());
-		ATTRIBUTE_GUI_2.setItem(14, CustomItem.getItem(ItemType.BLANK_SLOT).getItemStack());
+		// Slot index 11 is the history button (if the player has history, otherwise blank slot), index 13 is the held item
 		ENCHANTING_GUI_1.setItem(14, ItemType.BLANK_SLOT.getItemStack());
 		ENCHANTING_GUI_2.setItem(14, ItemType.BLANK_SLOT.getItemStack());
 		ATTRIBUTE_GUI_1.setItem(14, ItemType.BLANK_SLOT.getItemStack());

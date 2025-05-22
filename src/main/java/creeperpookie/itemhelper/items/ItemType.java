@@ -16,6 +16,8 @@ public enum ItemType
 	// GUI buttons
 	EMPTY_SLOT(ReplacementSlotItem.class),
 	BLANK_SLOT(BlankSlotItem.class),
+	PREVIOUS_HISTORY(PreviousHistoryItem.class),
+	PREVIOUS_HISTORY_ENTRY(PreviousHistoryEntryItem.class),
 	CURRENT_ITEMS(CurrentItemsItem.class),
 	BACK_BUTTON(BackButtonItem.class),
 	NEXT_PAGE(NextPageItem.class),

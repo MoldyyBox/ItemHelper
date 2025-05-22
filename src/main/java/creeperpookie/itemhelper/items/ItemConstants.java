@@ -9,6 +9,8 @@ public class ItemConstants
 	// GUI buttons
 	public static final int REPLACEMENT_SLOT_MODEL_DATA = 1700853284;
 	public static final int BLANK_SLOT_MODEL_DATA = 281855331;
+	public static final int PREVIOUS_HISTORY_MODEL_DATA = 400817584;
+	public static final int PREVIOUS_HISTORY_ENTRY_MODEL_DATA = 977731624;
 	public static final int CURRENT_ITEMS_MODEL_DATA = 1525903535;
 	public static final int BACK_BUTTON_MODEL_DATA = 1200966800;
 	public static final int NEXT_PAGE_MODEL_DATA = 504748374;
