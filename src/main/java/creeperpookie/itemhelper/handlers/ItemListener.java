@@ -15,6 +15,7 @@ import de.rapha149.signgui.SignGUIResult;
 import de.rapha149.signgui.exception.SignGUIVersionException;
 import net.kyori.adventure.text.Component;
 import net.kyori.adventure.text.format.TextDecoration;
+import net.wesjd.anvilgui.AnvilGUI;
 import org.bukkit.Bukkit;
 import org.bukkit.Material;
 import org.bukkit.Tag;
@@ -454,6 +455,79 @@ public class ItemListener implements Listener
 					ItemHelperPlugin.getInstance().getLogger().warning("An error occurred initializing the sign gui; please report this to the developer!");
 					ItemHelperPlugin.getInstance().getLogger().warning("Full error:");
 					Utility.printException(ItemHelperPlugin.getInstance().getLogger(), signGuiException);
+					ItemHelperPlugin.getInstance().getLogger().warning("Attempting to fall back to anvil GUI...");
+					new AnvilGUI.Builder()
+						.onClose(stateSnapshot ->
+						{
+							String input = stateSnapshot.getText();
+							double level = 0;
+							try
+							{
+								level = Double.parseDouble(input);
+							}
+							catch (NumberFormatException wholeParseException)
+							{
+								try
+								{
+									level = Double.parseDouble(input.substring("Level:".length()).trim());
+								}
+								catch (NumberFormatException substringParseException)
+								{
+									Utility.sendError(player, "Invalid level!"); // Should never happen
+								}
+							}
+							double finalLevel = level;
+							if (enchantment != null) items.forEach(itemStack -> itemStack.addUnsafeEnchantment(enchantment, (int) finalLevel));
+							if (attribute != null) items.forEach(itemStack ->
+							{
+								if (!itemStack.hasItemMeta()) itemStack.setItemMeta(Bukkit.getItemFactory().getItemMeta(itemStack.getType()));
+								itemStack.editMeta(meta -> meta.addAttributeModifier(attribute, new AttributeModifier(attribute.getKey(), finalLevel, AttributeModifier.Operation.ADD_NUMBER)));
+							});
+							getPlayerGUIData(player).setCurrentItems(items);
+							updateLore(items, getPlayerGUIData(player).isSmallText());
+							Bukkit.getScheduler().runTask(ItemHelperPlugin.getInstance(), () -> openGUI(player, getPlayerGUIData(player).getParentGUIType(), enchantment, attribute));
+						})
+						.onClick((slot, stateSnapshot) ->
+						{
+							if (slot != AnvilGUI.Slot.OUTPUT) return List.of(AnvilGUI.ResponseAction.close());
+							String input = stateSnapshot.getText().trim();
+							if (input.isEmpty())
+							{
+								Utility.sendError(player, "Invalid level!");
+								return List.of(AnvilGUI.ResponseAction.replaceInputText("Level: "));
+							}
+							try
+							{
+								double level = Double.parseDouble(input);
+								if (getPlayerGUIData(player).hasAttribute() || (getPlayerGUIData(player).hasEnchantment() && (level < 0 || level > 255))) return List.of(AnvilGUI.ResponseAction.close());
+								return List.of(AnvilGUI.ResponseAction.close());
+							}
+							catch (NumberFormatException wholeParseException)
+							{
+								try
+								{
+									double level = Double.parseDouble(input.substring("Level:".length()).trim());
+									if (getPlayerGUIData(player).hasAttribute() || (getPlayerGUIData(player).hasEnchantment() && (level < 0 || level > 255))) return List.of(AnvilGUI.ResponseAction.close());
+									else
+									{
+										Utility.sendError(player, "Level is out of range!");
+										return List.of(AnvilGUI.ResponseAction.replaceInputText("Level: "));
+									}
+								}
+								catch (NumberFormatException substringParseException)
+								{
+									Utility.sendError(player, "Invalid level!");
+									return List.of(AnvilGUI.ResponseAction.replaceInputText("Level: "));
+								}
+							}
+						})
+						.title(getPlayerGUIData(player).hasEnchantment() ? "Enchantment" : "Attribute" + "Level")
+						.text("Level: ")
+						.interactableSlots(AnvilGUI.Slot.OUTPUT)
+						.itemLeft(ItemType.BLANK_SLOT.getItemStack())
+						.itemRight(ItemType.BLANK_SLOT.getItemStack())
+						.plugin(ItemHelperPlugin.getInstance())
+						.open(player);
 					// TODO fall back to anvil
 					return;
 				}
