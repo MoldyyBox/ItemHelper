@@ -35,7 +35,7 @@ public class BackButtonItem implements CustomItem
 	@NotNull
 	public String getName()
 	{
-		return "blank_slot";
+		return "back_button";
 	}
 
 	@Override

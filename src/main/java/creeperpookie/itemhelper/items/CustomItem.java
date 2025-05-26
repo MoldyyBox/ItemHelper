@@ -250,7 +250,7 @@ public interface CustomItem
 	static void registerItem(CustomItem customItem)
 	{
 		if (registeredItems.containsKey(customItem.getClass())) return;
-		else if (isCustomItem(customItem.getName())) throw new IllegalArgumentException("Custom item implementation name ids must be unique: " + customItem.getName() + " in " + customItem.getClass().getName());
+		else if (isCustomItem(customItem.getName())) throw new IllegalArgumentException("Custom item implementation name ids must be unique: " + customItem.getName() + " in " + customItem.getClass().getName() + "(already defined as " + getItem(customItem.getName()).getClass().getName() + ")");
 		registeredItems.put(customItem.getClass(), customItem);
 	}
 }

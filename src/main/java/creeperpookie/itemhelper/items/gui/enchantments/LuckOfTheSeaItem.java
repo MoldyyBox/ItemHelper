@@ -35,7 +35,7 @@ public class LuckOfTheSeaItem implements CustomItem
 	@NotNull
 	public String getName()
 	{
-		return "power";
+		return "luck_of_the_sea";
 	}
 
 	@Override
