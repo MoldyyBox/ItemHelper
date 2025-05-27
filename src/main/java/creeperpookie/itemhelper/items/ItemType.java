@@ -10,6 +10,7 @@ import creeperpookie.itemhelper.items.gui.levels.CustomEnchantmentLevelItem;
 import creeperpookie.itemhelper.items.gui.levels.RemoveValueItem;
 import org.bukkit.inventory.ItemStack;
 import org.jetbrains.annotations.NotNull;
+import org.jetbrains.annotations.Nullable;
 
 public enum ItemType
 {
@@ -123,6 +124,11 @@ public enum ItemType
 	public CustomItem getCustomItem()
 	{
 		return CustomItem.getItem(this);
+	}
+
+	public boolean isItemStack(@Nullable ItemStack item)
+	{
+		return item != null && getCustomItem().isItem(item);
 	}
 
 	@NotNull

@@ -642,7 +642,7 @@ public class Utility
 	 * @param component The component to translate
 	 * @param useSectionSymbol Whether to use the section symbol or the ampersand symbol
 	 *
-	 * @return the escaped component as a string
+	 * @return the escaped component as a String
 	 */
 	@NotNull
 	public static String getColorEscapedString(@NotNull Component component, boolean useSectionSymbol)

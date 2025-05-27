@@ -27,7 +27,7 @@ public class PreviousHistoryEntryItem implements CustomItem
 		item.editMeta(meta ->
 		{
 			meta.setCustomModelData(getModelData());
-			meta.displayName(Component.text("Modifier", DefaultTextColor.BLUE).append(Component.text(data == 1 ? "" : "s", DefaultTextColor.BLUE)).appendSpace().append(Component.text("(", DefaultTextColor.BLUE)).append(Component.text(data, DefaultTextColor.BLUE)).append(Component.text(")")).append(Component.text(":", DefaultTextColor.BLUE)).decoration(TextDecoration.ITALIC, false));
+			meta.displayName(Component.text("Modifier", DefaultTextColor.BLUE).append(Component.text(data == 1 ? "" : "s", DefaultTextColor.BLUE)).appendSpace().append(Component.text("(", DefaultTextColor.BLUE)).append(Component.text(data, DefaultTextColor.BLUE)).appendSpace().append(Component.text(data != 1 ? "entries" : "entry", DefaultTextColor.BLUE)).append(Component.text(")")).append(Component.text(":", DefaultTextColor.BLUE)).decoration(TextDecoration.ITALIC, false));
 			meta.lore(List.of());
 		});
 		item.addUnsafeEnchantment(Enchantment.INFINITY, 1);

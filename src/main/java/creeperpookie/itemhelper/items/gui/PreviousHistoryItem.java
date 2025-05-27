@@ -23,7 +23,7 @@ public class PreviousHistoryItem implements CustomItem
 		item.editMeta(meta ->
 		{
 			meta.setCustomModelData(getModelData());
-			meta.displayName(Component.text("Previous Item Data", DefaultTextColor.BLUE).decoration(TextDecoration.ITALIC, false));
+			meta.displayName(Component.text("Previous Item Data", DefaultTextColor.BLUE).decoration(TextDecoration.ITALIC, false).decorate(TextDecoration.BOLD));
 			meta.lore(List.of());
 		});
 		item.addUnsafeEnchantment(Enchantment.INFINITY, 1);

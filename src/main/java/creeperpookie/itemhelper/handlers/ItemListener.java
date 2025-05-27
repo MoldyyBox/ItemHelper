@@ -438,7 +438,7 @@ public class ItemListener implements Listener
 			//ItemHelperPlugin.getInstance().getLogger().info("Attempting to open GUI " + type.getName() + " from old GUI type " + (currentGUIType != null ? currentGUIType.getName() : "null") + " for player " + player.getName() + " with items: " + items);
 			if (type != GUIType.LEVEL_CUSTOM)
 			{
-				Inventory gui = type.getGUI(player, type == GUIType.STORED_ITEMS ? hasPersistentGUIData(player) ? getPersistentGUIData(player).getUnretrievedItems() : new ArrayList<>() : items, enchantment, attribute, data, !isPlayerInGUI(player) || getPlayerGUIData(player).isSmallText());
+				Inventory gui = type.getInventoryGUI(player, type == GUIType.STORED_ITEMS ? hasPersistentGUIData(player) ? getPersistentGUIData(player).getUnretrievedItems() : new ArrayList<>() : items, enchantment, attribute, data, !isPlayerInGUI(player) || getPlayerGUIData(player).isSmallText());
 				Inventory openInventory = player.getOpenInventory().getTopInventory();
 				if (isPlayerInGUI(player) && currentGUIType == type && getPlayerGUIData(player).getGUIPage() > -1 && !(openInventory instanceof PlayerInventory) && !(openInventory instanceof CraftingInventory)) Utility.replaceGUI(openInventory, gui);
 				else player.openInventory(gui);

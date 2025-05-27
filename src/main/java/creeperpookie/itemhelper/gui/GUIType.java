@@ -58,7 +58,7 @@ public enum GUIType
 	 * @return The GUI for the given player and items, or null if no GUI is available.
 	 */
 	@NotNull
-	public Inventory getGUI(Player player, ArrayList<ItemStack> items, @Nullable Enchantment enchantment, @Nullable Attribute attribute, int page, boolean useSmallText)
+	public Inventory getInventoryGUI(Player player, ArrayList<ItemStack> items, @Nullable Enchantment enchantment, @Nullable Attribute attribute, int page, boolean useSmallText)
 	{
 		if (items.isEmpty()) throw new IllegalArgumentException("Tried to get an " + getName() + " GUI with no held items from player " + player.getName());
 		else if (this == LEVEL && enchantment == null && attribute == null) throw new IllegalArgumentException("Tried to get an " + getName() + " GUI for no enchantment or attribute from player " + player.getName());

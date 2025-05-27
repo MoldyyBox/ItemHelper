@@ -24,7 +24,7 @@ public class BackButtonItem implements CustomItem
 		{
 			meta.setCustomModelData(getModelData());
 			meta.displayName(Component.text("Back", DefaultTextColor.GOLD).decoration(TextDecoration.ITALIC, false).decorate(TextDecoration.BOLD));
-			meta.lore(List.of(Component.text("").decoration(TextDecoration.ITALIC, false)));
+			meta.lore(List.of(Component.text("Return to the previous screen", DefaultTextColor.BLUE).decoration(TextDecoration.ITALIC, false)));
 		});
 		item.addUnsafeEnchantment(Enchantment.INFINITY, 1);
 		item.addItemFlags(ItemFlag.HIDE_ENCHANTS, ItemFlag.HIDE_ATTRIBUTES, ItemFlag.HIDE_ADDITIONAL_TOOLTIP);
