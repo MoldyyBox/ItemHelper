@@ -9,13 +9,14 @@ import creeperpookie.itemhelper.items.CustomItem;
 import creeperpookie.itemhelper.items.ItemType;
 import creeperpookie.itemhelper.util.DefaultTextColor;
 import creeperpookie.itemhelper.util.Utility;
+import creeperpookie.itemhelper.util.item.ItemNamePlaceholder;
 import de.rapha149.signgui.SignGUI;
 import de.rapha149.signgui.SignGUIAction;
 import de.rapha149.signgui.SignGUIResult;
 import de.rapha149.signgui.exception.SignGUIVersionException;
 import net.kyori.adventure.text.Component;
 import net.kyori.adventure.text.format.TextDecoration;
-import net.wesjd.anvilgui.AnvilGUI;
+import creeperpookie.libraries.anvilgui.AnvilGUI;
 import org.bukkit.Bukkit;
 import org.bukkit.Material;
 import org.bukkit.Tag;
@@ -25,9 +26,11 @@ import org.bukkit.block.ShulkerBox;
 import org.bukkit.enchantments.Enchantment;
 import org.bukkit.entity.Player;
 import org.bukkit.event.EventHandler;
+import org.bukkit.event.EventPriority;
 import org.bukkit.event.Listener;
 import org.bukkit.event.inventory.InventoryClickEvent;
 import org.bukkit.event.inventory.InventoryCloseEvent;
+import org.bukkit.event.inventory.PrepareAnvilEvent;
 import org.bukkit.event.player.PlayerQuitEvent;
 import org.bukkit.inventory.CraftingInventory;
 import org.bukkit.inventory.Inventory;
@@ -48,6 +51,24 @@ public class ItemListener implements Listener
 {
 	private static final HashMap<Player, PersistentPlayerGUIData> PERSISTENT_PLAYER_GUI_DATA = new HashMap<>(); // data that is not cleared when closing GUIs
 	private static final HashMap<Player, PlayerGUIData> PLAYER_GUI_DATA = new HashMap<>(); // data that is cleared when closing GUIs
+
+	@EventHandler(priority = EventPriority.HIGHEST)
+	public void onAnvilChange(PrepareAnvilEvent event)
+	{
+		if (event.getInventory().getFirstItem() != null && !event.getInventory().getFirstItem().isEmpty() && ItemType.BACK_BUTTON.isItemStack(event.getInventory().getFirstItem()) && ItemType.SAVE_ITEM_NAME.isItemStack(event.getInventory().getResult()))
+		{
+			event.getInventory().getFirstItem().editMeta(meta ->
+			{
+				meta.setCustomModelData(ItemType.BACK_BUTTON.getItemStack().getItemMeta().getCustomModelData());
+				meta.displayName(ItemType.BACK_BUTTON.getItemStack().effectiveName());
+			});
+			event.getInventory().getResult().editMeta(meta ->
+			{
+				meta.setCustomModelData(ItemType.SAVE_ITEM_NAME.getItemStack().getItemMeta().getCustomModelData());
+				if (isPlayerInGUI((Player) event.getViewers().getFirst())) meta.displayName(Utility.getFormattedComponent(ItemNamePlaceholder.formatAll(event.getView().getRenameText() == null ? "" : event.getView().getRenameText(), getPlayerGUIData(((Player) event.getViewers().getFirst()).getPlayer())), false));
+			});
+		}
+	}
 
 	@EventHandler
 	public void onItemClick(InventoryClickEvent event)
@@ -89,7 +110,7 @@ public class ItemListener implements Listener
 				//ItemHelperPlugin.getInstance().getLogger().info("Clicked previous page button, player: " + player.getName() + " current page: " + page);
 				openGUI(player, guiType, savedEnchantment, savedAttribute, page - 1);
 			}
-			else if (customItem.isItemType(ItemType.BACK_BUTTON) && getPlayerGUIData(player).getParentGUIType() != null)
+			else if (customItem.isItemType(ItemType.BACK_BUTTON) && guiType != GUIType.SET_ITEM_NAME && getPlayerGUIData(player).getParentGUIType() != null)
 			{
 				if (guiType == GUIType.SELECTED_ITEMS) recheckGUIItems(inventory, getPlayerGUIData(player).getCurrentItems(), getPlayerGUIData(player).getGUIPage(), 1, 52, true);
 				//ItemHelperPlugin.getInstance().getLogger().info("Clicked back button, player: " + player.getName() + " current screen: " + getPlayerGUIData(player).getGUIType().getName() + ", parent screen: " + getPlayerGUIData(player).getParentGUIType().getName());
@@ -120,6 +141,11 @@ public class ItemListener implements Listener
 				updateLore(savedItems, action.isSmallText());
 				player.closeInventory(InventoryCloseEvent.Reason.OPEN_NEW);
 				Bukkit.getScheduler().runTask(ItemHelperPlugin.getInstance(), () -> openGUI(player, getPlayerGUIData(player).getParentGUIType(), savedEnchantment, savedAttribute));
+			}
+			else if (customItem.isItemType(ItemType.SET_ITEM_NAME))
+			{
+				player.closeInventory(InventoryCloseEvent.Reason.OPEN_NEW);
+				Bukkit.getScheduler().runTask(ItemHelperPlugin.getInstance(), () -> openGUI(player, GUIType.SET_ITEM_NAME, savedEnchantment, savedAttribute));
 			}
 			else if (customItem.isItemType(ItemType.BUNDLE_ITEMS))
 			{
@@ -264,7 +290,7 @@ public class ItemListener implements Listener
 		}
 	}
 
-	@EventHandler
+	@EventHandler(priority = EventPriority.LOWEST)
 	public void onInventoryClose(InventoryCloseEvent event)
 	{
 		Player player = (Player) event.getPlayer();
@@ -436,102 +462,123 @@ public class ItemListener implements Listener
 			if ((type == GUIType.ENCHANTING || type == GUIType.ATTRIBUTE) && (data < 0 || data > type.getMaxPage())) return; // data is GUI page
 			GUIType currentGUIType = isPlayerInGUI(player) ? getPlayerGUIData(player).getGUIType() : null;
 			//ItemHelperPlugin.getInstance().getLogger().info("Attempting to open GUI " + type.getName() + " from old GUI type " + (currentGUIType != null ? currentGUIType.getName() : "null") + " for player " + player.getName() + " with items: " + items);
-			if (type != GUIType.LEVEL_CUSTOM)
+			if (type.isInventory())
 			{
 				Inventory gui = type.getInventoryGUI(player, type == GUIType.STORED_ITEMS ? hasPersistentGUIData(player) ? getPersistentGUIData(player).getUnretrievedItems() : new ArrayList<>() : items, enchantment, attribute, data, !isPlayerInGUI(player) || getPlayerGUIData(player).isSmallText());
 				Inventory openInventory = player.getOpenInventory().getTopInventory();
 				if (isPlayerInGUI(player) && currentGUIType == type && getPlayerGUIData(player).getGUIPage() > -1 && !(openInventory instanceof PlayerInventory) && !(openInventory instanceof CraftingInventory)) Utility.replaceGUI(openInventory, gui);
 				else player.openInventory(gui);
 			}
-			else
+			else switch (type)
 			{
-				SignGUI signGUI;
-				try
+				case LEVEL_CUSTOM ->
 				{
-					signGUI = SignGUI.builder().setLines(Utility.getColorEscapedString(Component.text("Level: "), true)).setType(Material.BAMBOO_SIGN).setHandler(ItemListener::onSignChange).build();
-				}
-				catch (SignGUIVersionException signGuiException)
-				{
-					ItemHelperPlugin.getInstance().getLogger().warning("An error occurred initializing the sign gui; please report this to the developer!");
-					ItemHelperPlugin.getInstance().getLogger().warning("Full error:");
-					Utility.printException(ItemHelperPlugin.getInstance().getLogger(), signGuiException);
-					ItemHelperPlugin.getInstance().getLogger().warning("Attempting to fall back to anvil GUI...");
-					new AnvilGUI.Builder()
-						.onClose(stateSnapshot ->
-						{
-							String input = stateSnapshot.getText();
-							double level = 0;
-							try
-							{
-								level = Double.parseDouble(input);
-							}
-							catch (NumberFormatException wholeParseException)
-							{
-								try
+					SignGUI signGUI;
+					try
+					{
+						signGUI = SignGUI.builder().setLines(Utility.getColorEscapedString(Component.text("Level: "), true)).setType(Material.BAMBOO_SIGN).setHandler(ItemListener::onSignChange).build();
+					}
+					catch (SignGUIVersionException signGuiException)
+					{
+						ItemHelperPlugin.getInstance().getLogger().warning("An error occurred initializing the sign gui; please report this to the developer!");
+						ItemHelperPlugin.getInstance().getLogger().warning("Full error:");
+						Utility.printException(ItemHelperPlugin.getInstance().getLogger(), signGuiException);
+						ItemHelperPlugin.getInstance().getLogger().warning("Attempting to fall back to anvil GUI...");
+						new AnvilGUI.Builder()
+								.onClose(stateSnapshot -> Bukkit.getScheduler().runTask(ItemHelperPlugin.getInstance(), () -> openGUI(player, getPlayerGUIData(player).getParentGUIType(), enchantment, attribute)))
+								.onClick((slot, stateSnapshot) ->
 								{
-									level = Double.parseDouble(input.substring("Level:".length()).trim());
-								}
-								catch (NumberFormatException substringParseException)
-								{
-									Utility.sendError(player, "Invalid level!"); // Should never happen
-								}
-							}
-							double finalLevel = level;
-							if (enchantment != null) items.forEach(itemStack -> itemStack.addUnsafeEnchantment(enchantment, (int) finalLevel));
-							if (attribute != null) items.forEach(itemStack ->
-							{
-								if (!itemStack.hasItemMeta()) itemStack.setItemMeta(Bukkit.getItemFactory().getItemMeta(itemStack.getType()));
-								itemStack.editMeta(meta -> meta.addAttributeModifier(attribute, new AttributeModifier(attribute.getKey(), finalLevel, AttributeModifier.Operation.ADD_NUMBER)));
-							});
-							getPlayerGUIData(player).setCurrentItems(items);
-							updateLore(items, getPlayerGUIData(player).isSmallText());
-							Bukkit.getScheduler().runTask(ItemHelperPlugin.getInstance(), () -> openGUI(player, getPlayerGUIData(player).getParentGUIType(), enchantment, attribute));
-						})
-						.onClick((slot, stateSnapshot) ->
-						{
-							if (slot != AnvilGUI.Slot.OUTPUT) return List.of(AnvilGUI.ResponseAction.close());
-							String input = stateSnapshot.getText().trim();
-							if (input.isEmpty())
-							{
-								Utility.sendError(player, "Invalid level!");
-								return List.of(AnvilGUI.ResponseAction.replaceInputText("Level: "));
-							}
-							try
-							{
-								double level = Double.parseDouble(input);
-								if (getPlayerGUIData(player).hasAttribute() || (getPlayerGUIData(player).hasEnchantment() && (level < 0 || level > 255))) return List.of(AnvilGUI.ResponseAction.close());
-								return List.of(AnvilGUI.ResponseAction.close());
-							}
-							catch (NumberFormatException wholeParseException)
-							{
-								try
-								{
-									double level = Double.parseDouble(input.substring("Level:".length()).trim());
-									if (getPlayerGUIData(player).hasAttribute() || (getPlayerGUIData(player).hasEnchantment() && (level < 0 || level > 255))) return List.of(AnvilGUI.ResponseAction.close());
-									else
+									if (slot == AnvilGUI.Slot.INPUT_LEFT) return List.of(AnvilGUI.ResponseAction.close());
+									String input = stateSnapshot.getText().trim();
+									if (input.isEmpty())
 									{
-										Utility.sendError(player, "Level is out of range!");
+										Utility.sendError(player, "Invalid level!");
 										return List.of(AnvilGUI.ResponseAction.replaceInputText("Level: "));
 									}
-								}
-								catch (NumberFormatException substringParseException)
-								{
-									Utility.sendError(player, "Invalid level!");
-									return List.of(AnvilGUI.ResponseAction.replaceInputText("Level: "));
-								}
-							}
-						})
-						.title(getPlayerGUIData(player).hasEnchantment() ? "Enchantment" : "Attribute" + "Level")
-						.text("Level: ")
-						.interactableSlots(AnvilGUI.Slot.OUTPUT)
-						.itemLeft(ItemType.BLANK_SLOT.getItemStack())
-						.itemRight(ItemType.BLANK_SLOT.getItemStack())
-						.plugin(ItemHelperPlugin.getInstance())
-						.open(player);
-					// TODO fall back to anvil
-					return;
+									double level = 0;
+									try
+									{
+										level = Double.parseDouble(input);
+										if ((attribute == null && getPlayerGUIData(player).getParentGUIType() == GUIType.ATTRIBUTE) || (((enchantment == null && getPlayerGUIData(player).getParentGUIType() != GUIType.ENCHANTING)) || ((level < 0) || (level > 255))))
+										{
+											Utility.sendError(player, "Level is out of range!");
+											return List.of(AnvilGUI.ResponseAction.replaceInputText("Level: "));
+										}
+									}
+									catch (NumberFormatException wholeParseException)
+									{
+										try
+										{
+											level = Double.parseDouble(input.substring("Level:".length()).trim());
+											if (!getPlayerGUIData(player).hasAttribute() && (!getPlayerGUIData(player).hasEnchantment() || (!(level < 0) && !(level > 255))))
+											{
+												Utility.sendError(player, "Level is out of range!");
+												return List.of(AnvilGUI.ResponseAction.replaceInputText("Level: "));
+											}
+										}
+										catch (NumberFormatException substringParseException)
+										{
+											Utility.sendError(player, "Invalid level!");
+											return List.of(AnvilGUI.ResponseAction.replaceInputText("Level: "));
+										}
+									}
+									double finalLevel = level;
+									if (enchantment != null) items.forEach(itemStack -> itemStack.addUnsafeEnchantment(enchantment, (int) finalLevel));
+									if (attribute != null) items.forEach(itemStack ->
+									{
+										if (!itemStack.hasItemMeta()) itemStack.setItemMeta(Bukkit.getItemFactory().getItemMeta(itemStack.getType()));
+										itemStack.editMeta(meta -> meta.addAttributeModifier(attribute, new AttributeModifier(attribute.getKey(), finalLevel, AttributeModifier.Operation.ADD_NUMBER)));
+									});
+									getPlayerGUIData(player).setCurrentItems(items);
+									updateLore(items, getPlayerGUIData(player).isSmallText());
+									return List.of(AnvilGUI.ResponseAction.close());
+								})
+								.title(getPlayerGUIData(player).hasEnchantment() ? "Enchantment" : "Attribute" + " Level")
+								.text("Level: ")
+								.interactableSlots(AnvilGUI.Slot.INPUT_LEFT, AnvilGUI.Slot.OUTPUT)
+								.itemLeft(ItemType.BACK_BUTTON.getItemStack())
+								.itemOutput(ItemType.SAVE_LEVEL.getItemStack())
+								.plugin(ItemHelperPlugin.getInstance())
+								.open(player);
+						// TODO fall back to anvil
+						return;
+					}
+					signGUI.open(player);
 				}
-				signGUI.open(player);
+				case SET_ITEM_NAME ->
+				{
+					new AnvilGUI.Builder()
+					.onClose(stateSnapshot ->
+					{
+						if (isPlayerInGUI(player)) Bukkit.getScheduler().runTask(ItemHelperPlugin.getInstance(), () -> openGUI(player, getPlayerGUIData(player).getParentGUIType(), enchantment, attribute));
+					})
+					.onClick((slot, stateSnapshot) ->
+					{
+						if (slot != AnvilGUI.Slot.OUTPUT) return List.of(AnvilGUI.ResponseAction.close());
+						String input = stateSnapshot.getText().trim();
+						if (input.isEmpty())
+						{
+							Utility.sendError(player, "Inputted item name cannot be empty!");
+							return List.of(AnvilGUI.ResponseAction.replaceInputText(""));
+						}
+						if (isPlayerInGUI(player)) input = ItemNamePlaceholder.formatAll(input, getPlayerGUIData(player));
+						String finalInput = input;
+						items.forEach(item ->
+						{
+							if (item == null || item.isEmpty()) return;
+							item.editMeta(meta -> meta.displayName(Utility.getFormattedComponent(finalInput, false).decoration(TextDecoration.ITALIC, false)));
+						});
+						getPlayerGUIData(player).setCurrentItems(items);
+						return List.of(AnvilGUI.ResponseAction.close());
+					})
+					.title("Item Name")
+					.text(Utility.formatText(items.getFirst().getType().name()))
+					.interactableSlots(AnvilGUI.Slot.INPUT_LEFT, AnvilGUI.Slot.OUTPUT)
+					.itemLeft(ItemType.BACK_BUTTON.getItemStack())
+					.itemOutput(ItemType.SAVE_ITEM_NAME.getItemStack())
+					.plugin(ItemHelperPlugin.getInstance())
+					.open(player);
+				}
 			}
 			if (!PLAYER_GUI_DATA.containsKey(player)) PLAYER_GUI_DATA.put(player, new PlayerGUIData(heldItem.clone(), items, type != GUIType.LEVEL && type != GUIType.LEVEL_CUSTOM ? data : -1, currentGUIType, type, enchantment, attribute, true));
 			else

@@ -48,7 +48,8 @@ dependencies {
     compileOnly "io.papermc.paper:paper-api:${minecraft_version}-R0.1-SNAPSHOT"
     paperweight.paperDevBundle "${minecraft_version}-R0.1-SNAPSHOT"
     implementation "de.rapha149.signgui:signgui:2.5.0"
-    implementation "net.wesjd:anvilgui:2.0.3-SNAPSHOT"
+    compileOnly "net.wesjd:anvilgui:2.0.3-SNAPSHOT"
+    implementation files("./libs/anvilgui-2.0.3-SNAPSHOT.jar")
 }
 
 paperweight
@@ -80,6 +81,7 @@ tasks {
 
 jar
 {
+    dependsOn shadowJar
     enabled = false
 }
 
@@ -88,6 +90,7 @@ shadowJar
     archiveFileName = "${project.name}-${project.version}.jar"
     relocate "de.rapha149.signgui", "creeperpookie.libraries.signgui"
     relocate "net.wesjd.anvilgui", "creeperpookie.libraries.anvilgui"
+    mergeServiceFiles()
 }
 
 def targetJavaVersion = 21

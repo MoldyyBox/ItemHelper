@@ -12,20 +12,17 @@ import org.bukkit.inventory.ItemFlag;
 import org.bukkit.inventory.ItemStack;
 import org.jetbrains.annotations.NotNull;
 
-import java.util.List;
-
-public class BackButtonItem implements CustomItem
+public class SetItemNameItem implements CustomItem
 {
 	@Override
 	@NotNull
-	public ItemStack getItemStack()
+	public ItemStack getItemStack(int data)
 	{
-		ItemStack item = new ItemStack(Material.BARRIER);
+		ItemStack item = new ItemStack(Material.BAMBOO_SIGN);
 		item.editMeta(meta ->
 		{
 			meta.setCustomModelData(getModelData());
-			meta.displayName(Component.text("Back", DefaultTextColor.GOLD).decoration(TextDecoration.ITALIC, false).decorate(TextDecoration.BOLD));
-			meta.lore(List.of(Component.text("Return to the previous screen", DefaultTextColor.BLUE).decoration(TextDecoration.ITALIC, false)));
+			meta.displayName(Component.text("Set Item Name" + (data != 1 ? "s" : ""), DefaultTextColor.AQUA).decoration(TextDecoration.ITALIC, false).decorate(TextDecoration.BOLD));
 		});
 		item.addUnsafeEnchantment(Enchantment.INFINITY, 1);
 		item.addItemFlags(ItemFlag.HIDE_ENCHANTS, ItemFlag.HIDE_ATTRIBUTES, ItemFlag.HIDE_ADDITIONAL_TOOLTIP);
@@ -34,23 +31,29 @@ public class BackButtonItem implements CustomItem
 
 	@Override
 	@NotNull
+	public ItemStack getItemStack()
+	{
+		return getItemStack(1);
+	}
+
+	@Override
+	@NotNull
 	public String getName()
 	{
-		return "back_button";
+		return "set_item_name_item";
 	}
 
 	@Override
 	public int getModelData()
 	{
-		return ItemConstants.BACK_BUTTON_MODEL_DATA;
+		return ItemConstants.SET_ITEM_NAME_MODEL_DATA;
 	}
 
 	@Override
 	public boolean isItem(ItemStack item)
 	{
 		ItemStack currentItem = getItemStack();
-		int precision = 250; // Precision for custom model data comparison, when comparing from an anvil its value can be off by a few hundred
-		return item != null && item.hasItemMeta() && item.getItemMeta().hasCustomModelData() && item.getItemMeta().getCustomModelData() > currentItem.getItemMeta().getCustomModelData() - precision && item.getItemMeta().getCustomModelData() < currentItem.getItemMeta().getCustomModelData() + precision && item.getEnchantmentLevel(Enchantment.INFINITY) == 1 && item.getItemFlags().equals(currentItem.getItemFlags());
+		return item != null && item.hasItemMeta() && item.getItemMeta().hasCustomModelData() && item.getItemMeta().getCustomModelData() == currentItem.getItemMeta().getCustomModelData() && item.getEnchantmentLevel(Enchantment.INFINITY) == 1 && item.getItemFlags().equals(currentItem.getItemFlags());
 	}
 
 	@Override
@@ -63,6 +66,6 @@ public class BackButtonItem implements CustomItem
 	@Override
 	public boolean equals(@NotNull CustomItem item)
 	{
-		return item instanceof BackButtonItem;
+		return item instanceof SetItemNameItem;
 	}
 }

@@ -651,6 +651,18 @@ public class Utility
 	}
 
 	/**
+	 * Gets a formatted component from a string, using the section symbol or ampersand symbol for formatting.
+	 *
+	 * @param string The string to format
+	 * @param useSectionSymbol Whether to use the section symbol or the ampersand symbol
+	 * @return A {@link Component} with the formatted text
+	 */
+	public static Component getFormattedComponent(String string, boolean useSectionSymbol)
+	{
+		return useSectionSymbol ? LegacyComponentSerializer.legacySection().deserialize(string) : LegacyComponentSerializer.legacyAmpersand().deserialize(string);
+	}
+
+	/**
 	 * Returns a String list of all vanilla enchantments.
 	 *
 	 * @return a String List of all enchantments

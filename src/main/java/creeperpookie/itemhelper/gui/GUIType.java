@@ -26,7 +26,8 @@ public enum GUIType
 	ENCHANTING,
 	ATTRIBUTE,
 	LEVEL,
-	LEVEL_CUSTOM;
+	LEVEL_CUSTOM,
+	SET_ITEM_NAME;
 
 	private static final Component PREVIOUS_ITEMS_GUI_TITLE = Component.text("Previous Items", DefaultTextColor.AQUA).decoration(TextDecoration.ITALIC, false);
 	private static final Component STORED_ITEMS_GUI_TITLE = Component.text("Stored Items", DefaultTextColor.AQUA).decoration(TextDecoration.ITALIC, false);
@@ -44,6 +45,11 @@ public enum GUIType
 	public String getName()
 	{
 		return Utility.formatText(name());
+	}
+
+	public boolean isInventory()
+	{
+		return this != LEVEL_CUSTOM && this != SET_ITEM_NAME;
 	}
 
 	/**
@@ -110,7 +116,7 @@ public enum GUIType
 			case ENCHANTING, ATTRIBUTE ->
 			{
 				Inventory gui = Utility.copyInventory(page == 0 ? this == ENCHANTING ? ENCHANTING_GUI_1 : ATTRIBUTE_GUI_1 : this == ENCHANTING ? ENCHANTING_GUI_2 : ATTRIBUTE_GUI_2, getTitle());
-				gui.setItem(11, ItemListener.hasPersistentGUIData(player) && ItemListener.getPersistentGUIData(player).hasLastSuccessfulActions() ? ItemType.PREVIOUS_HISTORY.getItemStack() : ItemType.BLANK_SLOT.getItemStack());
+				gui.setItem(10, ItemListener.hasPersistentGUIData(player) && ItemListener.getPersistentGUIData(player).hasLastSuccessfulActions() ? ItemType.PREVIOUS_HISTORY.getItemStack() : ItemType.BLANK_SLOT.getItemStack());
 				gui.setItem(13, ItemType.CURRENT_ITEMS.getItemStack(items.size()));
 				gui.setItem(15, ItemType.SMALL_TEXT_TOGGLE.getItemStack(useSmallText ? 1 : 0));
 				yield gui;
@@ -123,7 +129,7 @@ public enum GUIType
 				else gui.setItem(9, ItemType.BASIC_LEVEL.getItemStack(0));
 				yield gui;
 			}
-			case LEVEL_CUSTOM -> throw new IllegalStateException("GUI Type " + getName() + "does not have a inventory GUI");
+			case LEVEL_CUSTOM, SET_ITEM_NAME -> throw new IllegalStateException("GUI Type " + getName() + "does not have a inventory GUI");
 		}, getTitle());
 	}
 
@@ -138,7 +144,7 @@ public enum GUIType
 			case ENCHANTING -> ENCHANTING_GUI_TITLE;
 			case ATTRIBUTE -> ATTRIBUTE_GUI_TITLE;
 			case LEVEL -> LEVEL_GUI_TITLE;
-			case LEVEL_CUSTOM -> null;
+			case LEVEL_CUSTOM, SET_ITEM_NAME -> null;
 		};
 	}
 
@@ -147,7 +153,7 @@ public enum GUIType
 		return switch (this)
 		{
 			case STORED_ITEMS, SELECTED_ITEMS -> Integer.MAX_VALUE;
-			case PREVIOUS_ITEMS, LEVEL, LEVEL_CUSTOM -> 1;
+			case PREVIOUS_ITEMS, LEVEL, LEVEL_CUSTOM, SET_ITEM_NAME -> 1;
 			case ENCHANTING, ATTRIBUTE -> 2;
 		};
 	}
@@ -173,13 +179,18 @@ public enum GUIType
 		// Set up the enchanting and attribute GUIs
 		for (int slot = 0; slot < 13; slot++)
 		{
-			if (slot == 11) continue;
+			if (slot == 10 || slot == 11) continue;
 			ENCHANTING_GUI_1.setItem(slot, ItemType.BLANK_SLOT.getItemStack());
 			ENCHANTING_GUI_2.setItem(slot, ItemType.BLANK_SLOT.getItemStack());
 			ATTRIBUTE_GUI_1.setItem(slot, ItemType.BLANK_SLOT.getItemStack());
 			ATTRIBUTE_GUI_2.setItem(slot, ItemType.BLANK_SLOT.getItemStack());
 		}
-		// Slot index 11 is the history button (if the player has history, otherwise blank slot), index 13 is the held item
+		// Slot index 10 is the history button (if the player doesn't have history, this would be a blank slot);
+		// Slot index 11 is the set item name button, and index 13 is the current items button
+		ENCHANTING_GUI_1.setItem(11, ItemType.SET_ITEM_NAME.getItemStack());
+		ENCHANTING_GUI_2.setItem(11, ItemType.SET_ITEM_NAME.getItemStack());
+		ATTRIBUTE_GUI_1.setItem(11, ItemType.SET_ITEM_NAME.getItemStack());
+		ATTRIBUTE_GUI_2.setItem(11, ItemType.SET_ITEM_NAME.getItemStack());
 		ENCHANTING_GUI_1.setItem(14, ItemType.BLANK_SLOT.getItemStack());
 		ENCHANTING_GUI_2.setItem(14, ItemType.BLANK_SLOT.getItemStack());
 		ATTRIBUTE_GUI_1.setItem(14, ItemType.BLANK_SLOT.getItemStack());

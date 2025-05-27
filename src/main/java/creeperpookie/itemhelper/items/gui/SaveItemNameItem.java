@@ -14,18 +14,18 @@ import org.jetbrains.annotations.NotNull;
 
 import java.util.List;
 
-public class BackButtonItem implements CustomItem
+public class SaveItemNameItem implements CustomItem
 {
 	@Override
 	@NotNull
 	public ItemStack getItemStack()
 	{
-		ItemStack item = new ItemStack(Material.BARRIER);
+		ItemStack item = new ItemStack(Material.BAMBOO_SIGN);
 		item.editMeta(meta ->
 		{
 			meta.setCustomModelData(getModelData());
-			meta.displayName(Component.text("Back", DefaultTextColor.GOLD).decoration(TextDecoration.ITALIC, false).decorate(TextDecoration.BOLD));
-			meta.lore(List.of(Component.text("Return to the previous screen", DefaultTextColor.BLUE).decoration(TextDecoration.ITALIC, false)));
+			meta.displayName(Component.text("Save Name", DefaultTextColor.AQUA));
+			meta.lore(List.of(Component.text("Click to save the name of the item", DefaultTextColor.GRAY).decoration(TextDecoration.ITALIC, false)));
 		});
 		item.addUnsafeEnchantment(Enchantment.INFINITY, 1);
 		item.addItemFlags(ItemFlag.HIDE_ENCHANTS, ItemFlag.HIDE_ATTRIBUTES, ItemFlag.HIDE_ADDITIONAL_TOOLTIP);
@@ -36,13 +36,13 @@ public class BackButtonItem implements CustomItem
 	@NotNull
 	public String getName()
 	{
-		return "back_button";
+		return "save_item_name_item";
 	}
 
 	@Override
 	public int getModelData()
 	{
-		return ItemConstants.BACK_BUTTON_MODEL_DATA;
+		return ItemConstants.SAVE_ITEM_NAME_MODEL_DATA;
 	}
 
 	@Override
@@ -63,6 +63,6 @@ public class BackButtonItem implements CustomItem
 	@Override
 	public boolean equals(@NotNull CustomItem item)
 	{
-		return item instanceof BackButtonItem;
+		return item instanceof SaveItemNameItem;
 	}
 }

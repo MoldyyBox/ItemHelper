@@ -1,0 +1,5 @@
+### Details
+For things like setting item names or enchantment/attribute levels, ItemHelper uses the [AnvilGUI](https://github.com/mastercake10/AnvilGUI) library (fork of [WesJD/AnvilGUI](https://github.com/WesJD/AnvilGUI)) to manage anvil screens easier. The provided compiled jar library in this folder is exactly the same the publicly released .jar of AnvilGUI, with the only exception being that its package names have been renamed for better integration with this project.
+
+### Developer Info
+While I am aware (and currently do) of integrating and shadowing AnvilGUI into Gradle for use in the project, I found it had some problems shadowing correctly, and especially when trying to hot-compile/debug code (even though it was shadowed and relocated). By precompiling a version with already renamed packages, when debugging code it helped to fix NoClassDefNotFound errors that could occur when trying to load and reload code (especially considering that with Gradle importing it at runtime, AnvilGUI was still defined under `net.wesjd.*`, instead of the migrated shadow package).
