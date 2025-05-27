@@ -3,6 +3,7 @@ package creeperpookie.itemhelper;
 import creeperpookie.itemhelper.commands.AttributeHelperCommand;
 import creeperpookie.itemhelper.commands.EnchantHelperCommand;
 import creeperpookie.itemhelper.commands.ItemHelperCommonCommand;
+import creeperpookie.itemhelper.gui.GUIType;
 import creeperpookie.itemhelper.handlers.ItemListener;
 import creeperpookie.itemhelper.items.CustomItem;
 import org.bukkit.Bukkit;
@@ -20,7 +21,7 @@ public class ItemHelperPlugin extends JavaPlugin
 	public void onEnable()
 	{
 		instance = this;
-		CustomItem.registerAll();
+		reload();
 		Bukkit.getPluginManager().registerEvents(new ItemListener(), this);
 		getCommand("itemhelper").setExecutor(new ItemHelperCommonCommand());
 		getCommand("enchanthelper").setExecutor(new EnchantHelperCommand());
@@ -34,6 +35,14 @@ public class ItemHelperPlugin extends JavaPlugin
 		getCommand("itemhelper").unregister(Bukkit.getCommandMap());
 		getCommand("enchanthelper").unregister(Bukkit.getCommandMap());
 		getCommand("attributehelper").unregister(Bukkit.getCommandMap());
+	}
+
+	public void reload()
+	{
+		// reloadConfig(); // not needed as we don't use a config.yml (yet)
+		CustomItem.registerAll();
+		GUIType.registerItems();
+		getLogger().info("Successfully reloaded ItemHelper");
 	}
 
 	public static ItemHelperPlugin getInstance()

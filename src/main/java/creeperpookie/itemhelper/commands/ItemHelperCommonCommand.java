@@ -1,8 +1,10 @@
 package creeperpookie.itemhelper.commands;
 
+import creeperpookie.itemhelper.ItemHelperPlugin;
 import creeperpookie.itemhelper.gui.GUIType;
 import creeperpookie.itemhelper.handlers.ItemListener;
 import creeperpookie.itemhelper.util.DefaultTextColor;
+import creeperpookie.itemhelper.util.Utility;
 import net.kyori.adventure.text.Component;
 import net.kyori.adventure.text.format.TextDecoration;
 import org.bukkit.command.Command;
@@ -54,6 +56,15 @@ public class ItemHelperCommonCommand implements CommandExecutor, TabCompleter
 			{
 				switch (args[0])
 				{
+					case "reload" ->
+					{
+						if (!player.hasPermission("itemhelper.reload")) Utility.sendError(player, "You do not have permission to do that!");
+						else
+						{
+							ItemHelperPlugin.getInstance().reload();
+							Utility.sendFeedback(player, "Successfully reloaded ItemHelper");
+						}
+					}
 					case "reset" ->
 					{
 						if (!ItemListener.isPlayerInGUI(player)) player.sendActionBar(Component.text("You aren't in the attribute GUI!", DefaultTextColor.RED).decoration(TextDecoration.ITALIC, false));

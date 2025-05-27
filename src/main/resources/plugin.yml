@@ -18,6 +18,9 @@ permissions:
     itemhelper.use:
         description: Allows the player to use the /itemhelper command
         default: op
+    itemhelper.reload:
+        description: Allows the player to reload the plugin
+        default: op
     itemhelper.enchant:
         description: Allows the player to enchant items
         default: op
