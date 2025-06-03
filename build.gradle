@@ -13,7 +13,8 @@ buildscript
     }
 }
 
-plugins {
+plugins
+{
     id 'java'
     id 'idea'
     id "xyz.jpenilla.run-paper" version "2.3.1"
@@ -21,35 +22,48 @@ plugins {
     id "io.papermc.paperweight.userdev" version "2.0.0-beta.16"
 }
 
-idea {
-    module {
+idea
+{
+    module
+    {
         downloadJavadoc = true
         downloadSources = true
     }
 }
 
-repositories {
+repositories
+{
     mavenCentral()
-    maven {
+    maven
+    {
         name = "papermc-repo"
         url = "https://repo.papermc.io/repository/maven-public/"
     }
-    maven {
+    maven
+    {
         name = "sonatype"
         url = "https://oss.sonatype.org/content/groups/public/"
     }
-    maven {
+    maven
+    {
         name = "spaceio-snapshots"
         url = "https://repo.spaceio.xyz/repository/maven-snapshots/"
     }
 }
 
-dependencies {
+dependencies
+{
     compileOnly "io.papermc.paper:paper-api:${minecraft_version}-R0.1-SNAPSHOT"
     paperweight.paperDevBundle "${minecraft_version}-R0.1-SNAPSHOT"
     implementation "de.rapha149.signgui:signgui:2.5.0"
     compileOnly "net.wesjd:anvilgui:2.0.3-SNAPSHOT"
     implementation files("./libs/anvilgui-2.0.3-SNAPSHOT.jar")
+
+    // Vulnerability fixes from dependabot
+    implementation "com.google.protobuf:protobuf-java:4.27.5"
+    implementation "io.netty:netty-handler:4.1.118.Final"
+    implementation "net.minidev:json-smart:2.5.2"
+    implementation "io.netty:netty-common:4.1.118.Final"
 }
 
 paperweight
@@ -57,8 +71,10 @@ paperweight
     reobfArtifactConfiguration = ReobfArtifactConfiguration.getMOJANG_PRODUCTION()
 }
 
-tasks {
-    runServer {
+tasks
+{
+    runServer
+    {
         // Configure the Minecraft version for our task.
         // This is the only required configuration besides applying the plugin.
         // Your plugin's jar (or shadowJar if present) will be used automatically.
@@ -91,33 +107,41 @@ shadowJar
     relocate "de.rapha149.signgui", "creeperpookie.libraries.signgui"
     relocate "net.wesjd.anvilgui", "creeperpookie.libraries.anvilgui"
     mergeServiceFiles()
+
+    exclude 'org/**'
+    exclude 'net/**'
+    exclude 'io/**'
+    exclude 'com/**'
+    exclude 'google/**'
+    exclude 'META-INF/maven/**'
+    exclude 'META-INF/services/**'
+    exclude 'META-INF/native-image/**'
+    exclude 'META-INF/io.netty.versions.properties'
+
 }
 
 def targetJavaVersion = 21
-java {
+java
+{
     def javaVersion = JavaVersion.toVersion(targetJavaVersion)
     sourceCompatibility = javaVersion
     targetCompatibility = javaVersion
-    if (JavaVersion.current() < javaVersion)
-    {
-        toolchain.languageVersion = JavaLanguageVersion.of(targetJavaVersion)
-    }
+    if (JavaVersion.current() < javaVersion) toolchain.languageVersion = JavaLanguageVersion.of(targetJavaVersion)
 }
 
-tasks.withType(JavaCompile).configureEach {
+tasks.withType(JavaCompile).configureEach
+{
     options.encoding = 'UTF-8'
-
-    if (targetJavaVersion >= 10 || JavaVersion.current().isJava10Compatible())
-    {
-        options.release.set(targetJavaVersion)
-    }
+    if (targetJavaVersion >= 10 || JavaVersion.current().isJava10Compatible()) options.release.set(targetJavaVersion)
 }
 
-processResources {
+processResources
+{
     def props = [name: project.name, version: version, plugin_id: plugin_id]
     inputs.properties props
     filteringCharset = 'UTF-8'
-    filesMatching('plugin.yml') {
+    filesMatching('plugin.yml')
+    {
         expand props
     }
 }
