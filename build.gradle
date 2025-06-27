@@ -61,9 +61,9 @@ dependencies
 
     // Vulnerability fixes from dependabot
     implementation "com.google.protobuf:protobuf-java:4.31.1"
-    implementation "io.netty:netty-handler:4.2.1.Final"
+    implementation "io.netty:netty-handler:4.2.2.Final"
     implementation "net.minidev:json-smart:2.5.2"
-    implementation "io.netty:netty-common:4.2.1.Final"
+    implementation "io.netty:netty-common:4.2.2.Final"
 }
 
 paperweight
